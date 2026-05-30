@@ -1,0 +1,145 @@
+version: '3.9'
+
+services:
+  # ─────────────────────────────────────────────
+  # PostgreSQL Database
+  # ─────────────────────────────────────────────
+  postgres:
+    image: postgres:16-alpine
+    container_name: ttt_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-taskadmin}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-taskpassword}
+      POSTGRES_DB: ${POSTGRES_DB:-tasktracker}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - '5432:5432'
+    networks:
+      - ttt_network
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER:-taskadmin} -d ${POSTGRES_DB:-tasktracker}']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ─────────────────────────────────────────────
+  # Redis Cache
+  # ─────────────────────────────────────────────
+  redis:
+    image: redis:7-alpine
+    container_name: ttt_redis
+    restart: unless-stopped
+    command: redis-server --requirepass ${REDIS_PASSWORD:-redispassword} --appendonly yes
+    volumes:
+      - redis_data:/data
+    ports:
+      - '6379:6379'
+    networks:
+      - ttt_network
+    healthcheck:
+      test: ['CMD', 'redis-cli', '-a', '${REDIS_PASSWORD:-redispassword}', 'ping']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ─────────────────────────────────────────────
+  # pgAdmin — Visual PostgreSQL GUI
+  # http://localhost:5050  |  admin@tasktracker.com / admin
+  # ─────────────────────────────────────────────
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: ttt_pgadmin
+    restart: unless-stopped
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@tasktracker.com
+      PGADMIN_DEFAULT_PASSWORD: admin
+      PGADMIN_CONFIG_SERVER_MODE: 'False'
+      PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED: 'False'
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+      - ./pgadmin/servers.json:/pgadmin4/servers.json:ro
+    ports:
+      - '5050:80'
+    networks:
+      - ttt_network
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  # ─────────────────────────────────────────────
+  # RedisInsight — Visual Redis GUI
+  # http://localhost:8001
+  # ─────────────────────────────────────────────
+  redisinsight:
+    image: redis/redisinsight:latest
+    container_name: ttt_redisinsight
+    restart: unless-stopped
+    ports:
+      - '8001:5540'
+    volumes:
+      - redisinsight_data:/data
+    networks:
+      - ttt_network
+    depends_on:
+      redis:
+        condition: service_healthy
+
+  # ─────────────────────────────────────────────
+  # Express API Server
+  # http://localhost:5000  |  Swagger: /api/docs
+  # ─────────────────────────────────────────────
+  server:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    container_name: ttt_server
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      NODE_ENV: ${NODE_ENV:-development}
+      PORT: 5000
+      DATABASE_URL: postgresql://${POSTGRES_USER:-taskadmin}:${POSTGRES_PASSWORD:-taskpassword}@postgres:5432/${POSTGRES_DB:-tasktracker}
+      REDIS_URL: redis://:${REDIS_PASSWORD:-redispassword}@redis:6379
+    ports:
+      - '5000:5000'
+    networks:
+      - ttt_network
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  # ─────────────────────────────────────────────
+  # React Frontend (Vite)  — Phase 7
+  # http://localhost:3000
+  # ─────────────────────────────────────────────
+  client:
+    build:
+      context: ./client
+      dockerfile: Dockerfile
+    container_name: ttt_client
+    restart: unless-stopped
+    environment:
+      VITE_API_URL: http://localhost:5000
+    ports:
+      - '3000:3000'
+    networks:
+      - ttt_network
+    depends_on:
+      - server
+    profiles:
+      - frontend   # opt-in: docker compose --profile frontend up
+
+volumes:
+  postgres_data:
+  redis_data:
+  pgadmin_data:
+  redisinsight_data:
+
+networks:
+  ttt_network:
+    driver: bridge
