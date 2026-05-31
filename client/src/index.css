@@ -617,16 +617,16 @@ body,
 }
 
 .role-ADMIN {
-  background: rgba(37, 99, 235, 0.25);
-  color: #93c5fd;
+  background: #2563eb;
+  color: #ffffff;
 }
 .role-MANAGER {
-  background: rgba(217, 119, 6, 0.25);
-  color: #fcd34d;
+  background: #d97706;
+  color: #ffffff;
 }
 .role-MEMBER {
-  background: rgba(22, 163, 74, 0.25);
-  color: #86efac;
+  background: #16a34a;
+  color: #ffffff;
 }
 
 .user-org {
@@ -1842,14 +1842,14 @@ tr:hover td {
 }
 
 .project-role-OWNER {
-  background: rgba(37, 99, 235, 0.12);
-  color: #2563eb;
-  border: 1px solid rgba(37, 99, 235, 0.25);
+  background: #2563eb;
+  color: #ffffff;
+  border: none;
 }
 .project-role-MEMBER {
-  background: rgba(22, 163, 74, 0.12);
-  color: #15803d;
-  border: 1px solid rgba(22, 163, 74, 0.25);
+  background: #16a34a;
+  color: #ffffff;
+  border: none;
 }
 
 /* ─── Multi-select checkboxes for project assignment ─────────── */
