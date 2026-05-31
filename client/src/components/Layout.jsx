@@ -1,23 +1,32 @@
-import { useState, useRef, useEffect } from 'react';
-import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
+import { useState, useRef, useEffect } from "react";
+import { Outlet, NavLink, useNavigate, useLocation } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 import {
-  LayoutDashboard, Users, LogOut, Layers, ChevronDown,
-  Check, ClipboardList, UserCheck, ChevronRight, Building2,
-} from 'lucide-react';
-import useAuthStore from '../store/authStore';
-import useProjectStore from '../store/projectStore';
-import { logout as logoutApi } from '../api/auth.api';
-import { listProjects } from '../api/projects.api';
+  LayoutDashboard,
+  Users,
+  LogOut,
+  Layers,
+  ChevronDown,
+  Check,
+  ClipboardList,
+  UserCheck,
+  ChevronRight,
+  Building2,
+} from "lucide-react";
+import useAuthStore from "../store/authStore";
+import useProjectStore from "../store/projectStore";
+import { logout as logoutApi } from "../api/auth.api";
+import { listProjects } from "../api/projects.api";
 
 export default function Layout() {
   const { user, refreshToken, logout } = useAuthStore();
-  const { selectedProject, setSelectedProject, clearSelectedProject } = useProjectStore();
+  const { selectedProject, setSelectedProject, clearSelectedProject } =
+    useProjectStore();
   const navigate = useNavigate();
   const location = useLocation();
 
   const [switcherOpen, setSwitcherOpen] = useState(false);
-  const [search, setSearch] = useState('');
+  const [search, setSearch] = useState("");
   const switcherRef = useRef(null);
 
   // Close switcher on outside click
@@ -25,43 +34,52 @@ export default function Layout() {
     const handler = (e) => {
       if (switcherRef.current && !switcherRef.current.contains(e.target)) {
         setSwitcherOpen(false);
-        setSearch('');
+        setSearch("");
       }
     };
-    document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
   }, []);
 
   const { data: projData } = useQuery({
-    queryKey: ['projects'],
-    queryFn: () => listProjects({ limit: 100 }).then(r => r.data.data),
+    queryKey: ["projects"],
+    queryFn: () => listProjects({ limit: 100 }).then((r) => r.data.data),
     staleTime: 30000,
   });
 
   const projects = projData?.projects || [];
-  const filtered = projects.filter(p =>
-    p.name.toLowerCase().includes(search.toLowerCase())
+  const filtered = projects.filter((p) =>
+    p.name.toLowerCase().includes(search.toLowerCase()),
   );
 
   const handleLogout = async () => {
-    try { await logoutApi(refreshToken); } catch {}
+    try {
+      await logoutApi(refreshToken);
+    } catch {}
     logout();
     clearSelectedProject();
-    navigate('/login');
+    navigate("/login");
   };
 
   const selectProject = (project) => {
     setSelectedProject(project);
     setSwitcherOpen(false);
-    setSearch('');
-    navigate('/dashboard');
+    setSearch("");
+    navigate("/dashboard");
   };
 
-  const initials = user?.name?.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) || '??';
-  const projectInitials = selectedProject?.name?.slice(0, 2).toUpperCase() || '··';
+  const initials =
+    user?.name
+      ?.split(" ")
+      .map((n) => n[0])
+      .join("")
+      .toUpperCase()
+      .slice(0, 2) || "??";
+  const projectInitials =
+    selectedProject?.name?.slice(0, 2).toUpperCase() || "··";
 
   // Dashboard sub-nav is active when the path starts with /dashboard
-  const isDashboardActive = location.pathname.startsWith('/dashboard');
+  const isDashboardActive = location.pathname.startsWith("/dashboard");
 
   return (
     <div className="app-layout">
@@ -76,7 +94,10 @@ export default function Layout() {
         <div className="project-switcher" ref={switcherRef}>
           <button
             className="project-switcher-btn"
-            onClick={() => { setSwitcherOpen(o => !o); setSearch(''); }}
+            onClick={() => {
+              setSwitcherOpen((o) => !o);
+              setSearch("");
+            }}
             id="project-switcher-btn"
             aria-expanded={switcherOpen}
             aria-label="Switch project"
@@ -84,11 +105,16 @@ export default function Layout() {
             <div className="project-switcher-icon">{projectInitials}</div>
             <div className="project-switcher-text">
               <div className="project-switcher-label">Current Project</div>
-              <div className={`project-switcher-name${!selectedProject ? ' no-project' : ''}`}>
-                {selectedProject?.name || 'None selected'}
+              <div
+                className={`project-switcher-name${!selectedProject ? " no-project" : ""}`}
+              >
+                {selectedProject?.name || "None selected"}
               </div>
             </div>
-            <ChevronDown size={14} className={`switcher-chevron${switcherOpen ? ' open' : ''}`} />
+            <ChevronDown
+              size={14}
+              className={`switcher-chevron${switcherOpen ? " open" : ""}`}
+            />
           </button>
 
           {switcherOpen && (
@@ -98,33 +124,47 @@ export default function Layout() {
                   autoFocus
                   placeholder="Search projects…"
                   value={search}
-                  onChange={e => setSearch(e.target.value)}
+                  onChange={(e) => setSearch(e.target.value)}
                   aria-label="Search projects"
                 />
               </div>
               <div className="switcher-list">
                 {filtered.length === 0 && (
-                  <div style={{ padding: '12px 10px', fontSize: '0.78rem', color: 'var(--sidebar-text-muted)', textAlign: 'center' }}>
+                  <div
+                    style={{
+                      padding: "12px 10px",
+                      fontSize: "0.78rem",
+                      color: "var(--sidebar-text-muted)",
+                      textAlign: "center",
+                    }}
+                  >
                     No projects found
                   </div>
                 )}
-                {filtered.map(p => (
+                {filtered.map((p) => (
                   <button
                     key={p.id}
-                    className={`switcher-item${selectedProject?.id === p.id ? ' active' : ''}`}
+                    className={`switcher-item${selectedProject?.id === p.id ? " active" : ""}`}
                     onClick={() => selectProject(p)}
                     id={`switcher-project-${p.id}`}
                   >
-                    <div className="switcher-item-icon">{p.name.slice(0, 2).toUpperCase()}</div>
+                    <div className="switcher-item-icon">
+                      {p.name.slice(0, 2).toUpperCase()}
+                    </div>
                     <span className="switcher-item-name">{p.name}</span>
-                    {selectedProject?.id === p.id && <Check size={13} className="switcher-item-check" />}
+                    {selectedProject?.id === p.id && (
+                      <Check size={13} className="switcher-item-check" />
+                    )}
                   </button>
                 ))}
               </div>
               <div className="switcher-footer">
                 <button
                   className="switcher-all-btn"
-                  onClick={() => { setSwitcherOpen(false); navigate('/projects'); }}
+                  onClick={() => {
+                    setSwitcherOpen(false);
+                    navigate("/projects");
+                  }}
                 >
                   <Layers size={13} />
                   Manage All Projects
@@ -136,7 +176,6 @@ export default function Layout() {
 
         {/* ── Navigation ─────────────────────────────────────── */}
         <nav className="sidebar-nav">
-
           {/* WORKSPACE section */}
           <span className="sidebar-section-label">Workspace</span>
 
@@ -144,7 +183,7 @@ export default function Layout() {
           <NavLink
             to="/dashboard"
             end
-            className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
+            className={({ isActive }) => `nav-item ${isActive ? "active" : ""}`}
             id="nav-dashboard"
           >
             <LayoutDashboard size={15} />
@@ -157,7 +196,9 @@ export default function Layout() {
               <NavLink
                 to="/dashboard"
                 end
-                className={({ isActive }) => `nav-item nav-item-sub ${isActive ? 'active' : ''}`}
+                className={({ isActive }) =>
+                  `nav-item nav-item-sub ${isActive ? "active" : ""}`
+                }
                 id="nav-tasks"
               >
                 <ClipboardList size={13} />
@@ -165,7 +206,9 @@ export default function Layout() {
               </NavLink>
               <NavLink
                 to="/dashboard/members"
-                className={({ isActive }) => `nav-item nav-item-sub ${isActive ? 'active' : ''}`}
+                className={({ isActive }) =>
+                  `nav-item nav-item-sub ${isActive ? "active" : ""}`
+                }
                 id="nav-members"
               >
                 <UserCheck size={13} />
@@ -175,21 +218,25 @@ export default function Layout() {
           )}
 
           {/* ORGANIZATION section */}
-          <span className="sidebar-section-label" style={{ marginTop: 12 }}>Organization</span>
+          <span className="sidebar-section-label" style={{ marginTop: 12 }}>
+            Organization
+          </span>
 
           <NavLink
             to="/projects"
-            className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
+            className={({ isActive }) => `nav-item ${isActive ? "active" : ""}`}
             id="nav-projects"
           >
             <Layers size={15} />
             Projects
           </NavLink>
 
-          {user?.role === 'ADMIN' && (
+          {user?.role === "ADMIN" && (
             <NavLink
               to="/users"
-              className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
+              className={({ isActive }) =>
+                `nav-item ${isActive ? "active" : ""}`
+              }
               id="nav-users"
             >
               <Users size={15} />
@@ -204,13 +251,17 @@ export default function Layout() {
             <div className="user-avatar">{initials}</div>
             <div className="user-details">
               <div className="user-name">{user?.name}</div>
-              <span className={`user-role-badge role-${user?.role}`}>{user?.role}</span>
+              <span className={`user-role-badge role-${user?.role}`}>
+                {user?.role}
+              </span>
             </div>
           </div>
-          {user?.org_name && (
-            <div className="user-org">{user.org_name}</div>
-          )}
-          <button className="nav-item" style={{ marginTop: 2 }} onClick={handleLogout}>
+          {user?.org_name && <div className="user-org">{user.org_name}</div>}
+          <button
+            className="nav-item"
+            style={{ marginTop: 2 }}
+            onClick={handleLogout}
+          >
             <LogOut size={14} />
             Sign out
           </button>

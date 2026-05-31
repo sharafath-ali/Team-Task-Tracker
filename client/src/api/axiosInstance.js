@@ -1,9 +1,9 @@
-import axios from 'axios';
-import useAuthStore from '../store/authStore';
+import axios from "axios";
+import useAuthStore from "../store/authStore";
 
 const api = axios.create({
-  baseURL: '/api',
-  headers: { 'Content-Type': 'application/json' },
+  baseURL: "/api",
+  headers: { "Content-Type": "application/json" },
 });
 
 // Attach access token to every request
@@ -22,17 +22,21 @@ api.interceptors.response.use(
       original._retry = true;
       try {
         const refreshToken = useAuthStore.getState().refreshToken;
-        const { data } = await axios.post('/api/auth/refresh', { refreshToken });
-        useAuthStore.getState().setTokens(data.data.accessToken, data.data.refreshToken);
+        const { data } = await axios.post("/api/auth/refresh", {
+          refreshToken,
+        });
+        useAuthStore
+          .getState()
+          .setTokens(data.data.accessToken, data.data.refreshToken);
         original.headers.Authorization = `Bearer ${data.data.accessToken}`;
         return api(original);
       } catch {
         useAuthStore.getState().logout();
-        window.location.href = '/login';
+        window.location.href = "/login";
       }
     }
     return Promise.reject(error);
-  }
+  },
 );
 
 export default api;
