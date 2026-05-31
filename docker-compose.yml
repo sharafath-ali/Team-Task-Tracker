@@ -57,6 +57,7 @@ services:
       PGADMIN_DEFAULT_PASSWORD: admin
       PGADMIN_CONFIG_SERVER_MODE: 'False'
       PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED: 'False'
+      PGADMIN_SERVER_JSON_FILE: /pgadmin4/servers.json
     volumes:
       - pgadmin_data:/var/lib/pgadmin
       - ./pgadmin/servers.json:/pgadmin4/servers.json:ro
@@ -76,6 +77,10 @@ services:
     image: redis/redisinsight:latest
     container_name: ttt_redisinsight
     restart: unless-stopped
+    environment:
+      RI_REDIS_HOST: redis
+      RI_REDIS_PORT: 6379
+      RI_REDIS_PASSWORD: ${REDIS_PASSWORD:-redispassword}
     ports:
       - '8001:5540'
     volumes:
@@ -131,8 +136,6 @@ services:
       - ttt_network
     depends_on:
       - server
-    profiles:
-      - frontend   # opt-in: docker compose --profile frontend up
 
 volumes:
   postgres_data:
