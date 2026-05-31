@@ -69,11 +69,11 @@ export default function ProjectMembersPage() {
         <div className="board-no-project-icon"><Layers size={36} /></div>
         <div>
           <div className="empty-state-title">No project selected</div>
-          <p className="empty-state-desc">Select a project to manage its members.</p>
+          <p className="empty-state-desc">Select a project from the switcher to manage its members.</p>
         </div>
         <button className="btn btn-primary" onClick={() => navigate('/projects')}>
           <ArrowRight size={15} />
-          Go to Projects
+          Browse Projects
         </button>
       </div>
     );

@@ -57,7 +57,7 @@ export default function ProjectsPage() {
       setSelectedProject(proj);
       setShowCreate(false);
       setForm({ name: "", description: "" });
-      navigate("/board");
+      navigate("/dashboard");
     },
     onError: (err) =>
       setError(err.response?.data?.message || "Failed to create project"),
@@ -68,7 +68,7 @@ export default function ProjectsPage() {
 
   const openProject = (project) => {
     setSelectedProject(project);
-    navigate("/board");
+    navigate("/dashboard");
   };
 
   return (

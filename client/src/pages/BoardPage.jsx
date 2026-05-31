@@ -84,7 +84,7 @@ export default function BoardPage() {
         </div>
         <button className="btn btn-primary" onClick={() => navigate('/projects')}>
           <ArrowRight size={15} />
-          Go to Projects
+          Browse Projects
         </button>
       </div>
     );

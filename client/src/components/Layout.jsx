@@ -1,9 +1,9 @@
 import { useState, useRef, useEffect } from 'react';
-import { Outlet, NavLink, useNavigate } from 'react-router-dom';
+import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import {
   LayoutDashboard, Users, LogOut, Layers, ChevronDown,
-  Check, FolderOpen, UserCheck, Plus,
+  Check, ClipboardList, UserCheck, ChevronRight, Building2,
 } from 'lucide-react';
 import useAuthStore from '../store/authStore';
 import useProjectStore from '../store/projectStore';
@@ -14,6 +14,7 @@ export default function Layout() {
   const { user, refreshToken, logout } = useAuthStore();
   const { selectedProject, setSelectedProject, clearSelectedProject } = useProjectStore();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const [switcherOpen, setSwitcherOpen] = useState(false);
   const [search, setSearch] = useState('');
@@ -53,12 +54,14 @@ export default function Layout() {
     setSelectedProject(project);
     setSwitcherOpen(false);
     setSearch('');
-    navigate('/board');
+    navigate('/dashboard');
   };
 
   const initials = user?.name?.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) || '??';
-  const projectInitials = selectedProject?.name?.slice(0, 2).toUpperCase() || '??';
-  const canCreate = ['ADMIN', 'MANAGER'].includes(user?.role);
+  const projectInitials = selectedProject?.name?.slice(0, 2).toUpperCase() || '··';
+
+  // Dashboard sub-nav is active when the path starts with /dashboard
+  const isDashboardActive = location.pathname.startsWith('/dashboard');
 
   return (
     <div className="app-layout">
@@ -124,62 +127,74 @@ export default function Layout() {
                   onClick={() => { setSwitcherOpen(false); navigate('/projects'); }}
                 >
                   <Layers size={13} />
-                  All Projects
+                  Manage All Projects
                 </button>
               </div>
             </div>
           )}
         </div>
 
-        {/* Navigation */}
+        {/* ── Navigation ─────────────────────────────────────── */}
         <nav className="sidebar-nav">
-          <span className="sidebar-section-label">Navigation</span>
+
+          {/* WORKSPACE section */}
+          <span className="sidebar-section-label">Workspace</span>
+
+          {/* Dashboard — top-level link */}
+          <NavLink
+            to="/dashboard"
+            end
+            className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
+            id="nav-dashboard"
+          >
+            <LayoutDashboard size={15} />
+            Dashboard
+          </NavLink>
+
+          {/* Dashboard sub-nav — shown when a project is selected AND we're inside /dashboard */}
+          {selectedProject && isDashboardActive && (
+            <div className="sidebar-subnav">
+              <NavLink
+                to="/dashboard"
+                end
+                className={({ isActive }) => `nav-item nav-item-sub ${isActive ? 'active' : ''}`}
+                id="nav-tasks"
+              >
+                <ClipboardList size={13} />
+                Tasks
+              </NavLink>
+              <NavLink
+                to="/dashboard/members"
+                className={({ isActive }) => `nav-item nav-item-sub ${isActive ? 'active' : ''}`}
+                id="nav-members"
+              >
+                <UserCheck size={13} />
+                Members
+              </NavLink>
+            </div>
+          )}
+
+          {/* ORGANIZATION section */}
+          <span className="sidebar-section-label" style={{ marginTop: 12 }}>Organization</span>
 
           <NavLink
             to="/projects"
             className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
+            id="nav-projects"
           >
             <Layers size={15} />
             Projects
           </NavLink>
 
-          <NavLink
-            to="/board"
-            className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
-          >
-            <LayoutDashboard size={15} />
-            Board
-          </NavLink>
-
-          {/* Project-scoped links — shown only when a project is selected */}
-          {selectedProject && (
-            <>
-              <span className="sidebar-section-label" style={{ marginTop: 8 }}>
-                {selectedProject.name}
-              </span>
-
-              <NavLink
-                to="/members"
-                className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
-              >
-                <UserCheck size={15} />
-                Members
-              </NavLink>
-            </>
-          )}
-
-          {/* Admin-only links */}
           {user?.role === 'ADMIN' && (
-            <>
-              <span className="sidebar-section-label" style={{ marginTop: 8 }}>Admin</span>
-              <NavLink
-                to="/users"
-                className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
-              >
-                <Users size={15} />
-                Manage Users
-              </NavLink>
-            </>
+            <NavLink
+              to="/users"
+              className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
+              id="nav-users"
+            >
+              <Users size={15} />
+              Users
+            </NavLink>
           )}
         </nav>
 

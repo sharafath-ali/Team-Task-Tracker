@@ -441,6 +441,34 @@ html, body, #root {
 .nav-item svg { flex-shrink: 0; opacity: 0.8; }
 .nav-item.active svg { opacity: 1; }
 
+/* ─── Sidebar Sub-Navigation ─────────────────────────────── */
+.sidebar-subnav {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  margin-left: 10px;
+  padding-left: 12px;
+  border-left: 1.5px solid var(--sidebar-border);
+  margin-top: 1px;
+  margin-bottom: 2px;
+}
+
+.nav-item-sub {
+  font-size: 0.79rem;
+  padding: 5px 9px;
+  gap: 8px;
+  color: var(--sidebar-text-muted);
+}
+
+.nav-item-sub:hover { color: #f1f5f9; }
+.nav-item-sub.active {
+  background: var(--sidebar-active);
+  color: var(--sidebar-active-text);
+}
+.nav-item-sub svg { opacity: 0.75; }
+.nav-item-sub.active svg { opacity: 1; }
+
+
 .sidebar-footer {
   border-top: 1px solid var(--sidebar-border);
   padding: 0.75rem;

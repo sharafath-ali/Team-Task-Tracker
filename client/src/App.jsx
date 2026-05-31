@@ -11,7 +11,7 @@ import Layout from './components/Layout';
 const ProtectedRoute = ({ children, roles }) => {
   const { user, accessToken } = useAuthStore();
   if (!accessToken) return <Navigate to="/login" replace />;
-  if (roles && !roles.includes(user?.role)) return <Navigate to="/projects" replace />;
+  if (roles && !roles.includes(user?.role)) return <Navigate to="/dashboard" replace />;
   return children;
 };
 
@@ -19,25 +19,27 @@ export default function App() {
   const { accessToken } = useAuthStore();
   return (
     <Routes>
-      <Route path="/login"    element={!accessToken ? <LoginPage />    : <Navigate to="/projects" />} />
-      <Route path="/register" element={!accessToken ? <RegisterPage /> : <Navigate to="/projects" />} />
+      <Route path="/login"    element={!accessToken ? <LoginPage />    : <Navigate to="/dashboard" />} />
+      <Route path="/register" element={!accessToken ? <RegisterPage /> : <Navigate to="/dashboard" />} />
 
       <Route path="/" element={
         <ProtectedRoute>
           <Layout />
         </ProtectedRoute>
       }>
-        {/* Default landing → Projects */}
-        <Route index element={<Navigate to="/projects" replace />} />
+        {/* Default → Dashboard */}
+        <Route index element={<Navigate to="/dashboard" replace />} />
 
-        {/* Projects */}
+        {/* ── WORKSPACE ─────────────────────────────── */}
+        {/* Dashboard: task board scoped to selected project */}
+        <Route path="dashboard" element={<BoardPage />} />
+
+        {/* Dashboard sub-section: project members */}
+        <Route path="dashboard/members" element={<ProjectMembersPage />} />
+
+        {/* ── ORGANIZATION ──────────────────────────── */}
+        {/* Projects listing & management */}
         <Route path="projects" element={<ProjectsPage />} />
-
-        {/* Project Board (scoped to selected project via store) */}
-        <Route path="board" element={<BoardPage />} />
-
-        {/* Project Members */}
-        <Route path="members" element={<ProjectMembersPage />} />
 
         {/* Admin — User management */}
         <Route path="users" element={
@@ -47,7 +49,7 @@ export default function App() {
         } />
       </Route>
 
-      <Route path="*" element={<Navigate to="/projects" />} />
+      <Route path="*" element={<Navigate to="/dashboard" />} />
     </Routes>
   );
 }
