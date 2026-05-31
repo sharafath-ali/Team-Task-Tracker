@@ -156,16 +156,6 @@ export default function LoginPage() {
             </Link>
           </div>
 
-          <div className="auth-divider" />
-
-          <div className="demo-box">
-            <strong>Demo credentials</strong>
-            admin@demo.com / password123
-            <br />
-            manager@demo.com / password123
-            <br />
-            member@demo.com / password123
-          </div>
         </div>
       </div>
     </div>
