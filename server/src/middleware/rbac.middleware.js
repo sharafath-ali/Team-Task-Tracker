@@ -1,4 +1,4 @@
-const { sendError } = require('../utils/response.utils');
+const { sendError } = require("../utils/response.utils");
 
 /**
  * Role-Based Access Control middleware factory.
@@ -11,14 +11,14 @@ const { sendError } = require('../utils/response.utils');
 const authorize = (...roles) => {
   return (req, res, next) => {
     if (!req.user) {
-      return sendError(res, 401, 'UNAUTHORIZED', 'Authentication required');
+      return sendError(res, 401, "UNAUTHORIZED", "Authentication required");
     }
     if (!roles.includes(req.user.role)) {
       return sendError(
         res,
         403,
-        'FORBIDDEN',
-        `Access denied. Required role(s): ${roles.join(', ')}. Your role: ${req.user.role}`
+        "FORBIDDEN",
+        `Access denied. Required role(s): ${roles.join(", ")}. Your role: ${req.user.role}`,
       );
     }
     next();
@@ -34,13 +34,18 @@ const authorize = (...roles) => {
 const authorizeOwnerOrRoles = (...roles) => {
   return (req, res, next) => {
     if (!req.user) {
-      return sendError(res, 401, 'UNAUTHORIZED', 'Authentication required');
+      return sendError(res, 401, "UNAUTHORIZED", "Authentication required");
     }
     const isElevated = roles.includes(req.user.role);
     const isOwner = req.resourceOwnerId && req.resourceOwnerId === req.user.id;
 
     if (!isElevated && !isOwner) {
-      return sendError(res, 403, 'FORBIDDEN', 'You do not have permission to access this resource');
+      return sendError(
+        res,
+        403,
+        "FORBIDDEN",
+        "You do not have permission to access this resource",
+      );
     }
     next();
   };

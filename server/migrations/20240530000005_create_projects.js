@@ -1,16 +1,24 @@
 /** @param {import('knex').Knex} knex */
 exports.up = async (knex) => {
-  await knex.schema.createTable('projects', (t) => {
-    t.uuid('id').primary().defaultTo(knex.raw('gen_random_uuid()'));
-    t.uuid('org_id').notNullable().references('id').inTable('organizations').onDelete('CASCADE');
-    t.uuid('created_by').notNullable().references('id').inTable('users').onDelete('RESTRICT');
-    t.string('name', 255).notNullable();
-    t.text('description');
+  await knex.schema.createTable("projects", (t) => {
+    t.uuid("id").primary().defaultTo(knex.raw("gen_random_uuid()"));
+    t.uuid("org_id")
+      .notNullable()
+      .references("id")
+      .inTable("organizations")
+      .onDelete("CASCADE");
+    t.uuid("created_by")
+      .notNullable()
+      .references("id")
+      .inTable("users")
+      .onDelete("RESTRICT");
+    t.string("name", 255).notNullable();
+    t.text("description");
     t.timestamps(true, true);
   });
 
-  await knex.schema.table('projects', (t) => {
-    t.index(['org_id'], 'idx_projects_org_id');
+  await knex.schema.table("projects", (t) => {
+    t.index(["org_id"], "idx_projects_org_id");
   });
 
   await knex.raw(`
@@ -21,4 +29,4 @@ exports.up = async (knex) => {
 };
 
 /** @param {import('knex').Knex} knex */
-exports.down = (knex) => knex.schema.dropTableIfExists('projects');
+exports.down = (knex) => knex.schema.dropTableIfExists("projects");

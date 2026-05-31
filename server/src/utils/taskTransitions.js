@@ -12,11 +12,11 @@
  * This is enforced in tasks.service.js, not here.
  */
 const VALID_TRANSITIONS = {
-  TODO:        ['IN_PROGRESS', 'BLOCKED'],
-  IN_PROGRESS: ['IN_REVIEW', 'BLOCKED'],
-  IN_REVIEW:   ['DONE', 'IN_PROGRESS', 'BLOCKED'],
-  BLOCKED:     ['TODO', 'IN_PROGRESS'],
-  DONE:        [],  // terminal
+  TODO: ["IN_PROGRESS", "BLOCKED"],
+  IN_PROGRESS: ["IN_REVIEW", "BLOCKED"],
+  IN_REVIEW: ["DONE", "IN_PROGRESS", "BLOCKED"],
+  BLOCKED: ["TODO", "IN_PROGRESS"],
+  DONE: [], // terminal
 };
 
 /**
@@ -35,4 +35,8 @@ const isValidTransition = (from, to) => {
  */
 const getAllowedTransitions = (status) => VALID_TRANSITIONS[status] ?? [];
 
-module.exports = { VALID_TRANSITIONS, isValidTransition, getAllowedTransitions };
+module.exports = {
+  VALID_TRANSITIONS,
+  isValidTransition,
+  getAllowedTransitions,
+};

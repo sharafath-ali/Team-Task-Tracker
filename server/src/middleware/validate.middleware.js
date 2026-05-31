@@ -1,4 +1,4 @@
-const { sendError } = require('../utils/response.utils');
+const { sendError } = require("../utils/response.utils");
 
 /**
  * Joi validation middleware factory.
@@ -11,19 +11,19 @@ const { sendError } = require('../utils/response.utils');
  * @param {import('joi').Schema} schema
  * @param {'body'|'query'|'params'} target
  */
-const validate = (schema, target = 'body') => {
+const validate = (schema, target = "body") => {
   return (req, res, next) => {
     const { error, value } = schema.validate(req[target], {
-      abortEarly: false,   // collect ALL errors, not just first
-      stripUnknown: true,  // remove extra fields
-      convert: true,       // coerce types (e.g. "1" → 1)
+      abortEarly: false, // collect ALL errors, not just first
+      stripUnknown: true, // remove extra fields
+      convert: true, // coerce types (e.g. "1" → 1)
     });
 
     if (error) {
       const message = error.details
-        .map((d) => d.message.replace(/['"]/g, ''))
-        .join('; ');
-      return sendError(res, 400, 'VALIDATION_ERROR', message);
+        .map((d) => d.message.replace(/['"]/g, ""))
+        .join("; ");
+      return sendError(res, 400, "VALIDATION_ERROR", message);
     }
 
     req[target] = value; // replace with sanitized value

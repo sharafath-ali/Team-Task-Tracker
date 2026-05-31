@@ -1,5 +1,5 @@
-const authService = require('./auth.service');
-const { sendSuccess } = require('../../utils/response.utils');
+const authService = require("./auth.service");
+const { sendSuccess } = require("../../utils/response.utils");
 
 const register = async (req, res, next) => {
   try {
@@ -12,7 +12,9 @@ const register = async (req, res, next) => {
 
 const login = async (req, res, next) => {
   try {
-    const { user, accessToken, refreshToken } = await authService.login(req.body);
+    const { user, accessToken, refreshToken } = await authService.login(
+      req.body,
+    );
     sendSuccess(res, { user, accessToken, refreshToken });
   } catch (err) {
     next(err);
@@ -21,7 +23,9 @@ const login = async (req, res, next) => {
 
 const refresh = async (req, res, next) => {
   try {
-    const { accessToken, refreshToken } = await authService.refresh(req.body.refreshToken);
+    const { accessToken, refreshToken } = await authService.refresh(
+      req.body.refreshToken,
+    );
     sendSuccess(res, { accessToken, refreshToken });
   } catch (err) {
     next(err);
@@ -31,7 +35,7 @@ const refresh = async (req, res, next) => {
 const logout = async (req, res, next) => {
   try {
     await authService.logout(req.body.refreshToken);
-    sendSuccess(res, { message: 'Logged out successfully' });
+    sendSuccess(res, { message: "Logged out successfully" });
   } catch (err) {
     next(err);
   }

@@ -1,4 +1,4 @@
-const logger = require('../utils/logger');
+const logger = require("../utils/logger");
 
 /**
  * Custom application error class.
@@ -8,7 +8,7 @@ const logger = require('../utils/logger');
  *   throw new AppError('User not found', 404, 'NOT_FOUND')
  */
 class AppError extends Error {
-  constructor(message, statusCode = 500, code = 'INTERNAL_ERROR') {
+  constructor(message, statusCode = 500, code = "INTERNAL_ERROR") {
     super(message);
     this.statusCode = statusCode;
     this.code = code;
@@ -39,46 +39,58 @@ const errorMiddleware = (err, req, res, _next) => {
   }
 
   // PostgreSQL unique constraint violation
-  if (err.code === '23505') {
+  if (err.code === "23505") {
     return res.status(409).json({
       status: 409,
-      code: 'CONFLICT',
-      message: 'A record with this value already exists',
+      code: "CONFLICT",
+      message: "A record with this value already exists",
     });
   }
 
   // PostgreSQL foreign key constraint violation
-  if (err.code === '23503') {
+  if (err.code === "23503") {
     return res.status(400).json({
       status: 400,
-      code: 'INVALID_REFERENCE',
-      message: 'Referenced resource does not exist',
+      code: "INVALID_REFERENCE",
+      message: "Referenced resource does not exist",
     });
   }
 
   // Knex validation / query errors
-  if (err.code === '22P02') {
+  if (err.code === "22P02") {
     return res.status(400).json({
       status: 400,
-      code: 'INVALID_INPUT',
-      message: 'Invalid UUID or data format',
+      code: "INVALID_INPUT",
+      message: "Invalid UUID or data format",
     });
   }
 
   // JWT errors (shouldn't reach here but just in case)
-  if (err.name === 'TokenExpiredError') {
-    return res.status(401).json({ status: 401, code: 'TOKEN_EXPIRED', message: 'Access token has expired' });
+  if (err.name === "TokenExpiredError") {
+    return res
+      .status(401)
+      .json({
+        status: 401,
+        code: "TOKEN_EXPIRED",
+        message: "Access token has expired",
+      });
   }
-  if (err.name === 'JsonWebTokenError') {
-    return res.status(401).json({ status: 401, code: 'INVALID_TOKEN', message: 'Invalid access token' });
+  if (err.name === "JsonWebTokenError") {
+    return res
+      .status(401)
+      .json({
+        status: 401,
+        code: "INVALID_TOKEN",
+        message: "Invalid access token",
+      });
   }
 
   // Generic 500
-  const isDev = process.env.NODE_ENV !== 'production';
+  const isDev = process.env.NODE_ENV !== "production";
   return res.status(500).json({
     status: 500,
-    code: 'INTERNAL_ERROR',
-    message: isDev ? err.message : 'An unexpected error occurred',
+    code: "INTERNAL_ERROR",
+    message: isDev ? err.message : "An unexpected error occurred",
     ...(isDev && { stack: err.stack }),
   });
 };

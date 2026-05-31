@@ -1,5 +1,5 @@
-const jwt = require('jsonwebtoken');
-const env = require('../config/env');
+const jwt = require("jsonwebtoken");
+const env = require("../config/env");
 
 /**
  * Generate a short-lived access token (default 15m)
@@ -8,7 +8,7 @@ const env = require('../config/env');
 const generateAccessToken = (payload) =>
   jwt.sign(payload, env.JWT_ACCESS_SECRET, {
     expiresIn: env.JWT_ACCESS_EXPIRES_IN,
-    issuer: 'team-task-tracker',
+    issuer: "team-task-tracker",
   });
 
 /**
@@ -18,20 +18,20 @@ const generateAccessToken = (payload) =>
 const generateRefreshToken = (payload) =>
   jwt.sign(payload, env.JWT_REFRESH_SECRET, {
     expiresIn: env.JWT_REFRESH_EXPIRES_IN,
-    issuer: 'team-task-tracker',
+    issuer: "team-task-tracker",
   });
 
 /**
  * Verify access token — throws JsonWebTokenError or TokenExpiredError on failure
  */
 const verifyAccessToken = (token) =>
-  jwt.verify(token, env.JWT_ACCESS_SECRET, { issuer: 'team-task-tracker' });
+  jwt.verify(token, env.JWT_ACCESS_SECRET, { issuer: "team-task-tracker" });
 
 /**
  * Verify refresh token
  */
 const verifyRefreshToken = (token) =>
-  jwt.verify(token, env.JWT_REFRESH_SECRET, { issuer: 'team-task-tracker' });
+  jwt.verify(token, env.JWT_REFRESH_SECRET, { issuer: "team-task-tracker" });
 
 module.exports = {
   generateAccessToken,

@@ -1,9 +1,9 @@
-const router = require('express').Router();
-const controller = require('./analytics.controller');
-const { authenticate } = require('../../middleware/auth.middleware');
-const { authorize } = require('../../middleware/rbac.middleware');
+const router = require("express").Router();
+const controller = require("./analytics.controller");
+const { authenticate } = require("../../middleware/auth.middleware");
+const { authorize } = require("../../middleware/rbac.middleware");
 
-router.use(authenticate, authorize('ADMIN', 'MANAGER'));
+router.use(authenticate, authorize("ADMIN", "MANAGER"));
 
 /**
  * @swagger
@@ -23,7 +23,7 @@ router.use(authenticate, authorize('ADMIN', 'MANAGER'));
  *       200:
  *         description: List of users with their overdue task counts
  */
-router.get('/overdue', controller.overdue);
+router.get("/overdue", controller.overdue);
 
 /**
  * @swagger
@@ -36,6 +36,6 @@ router.get('/overdue', controller.overdue);
  *       200:
  *         description: List of users with average completion time in hours
  */
-router.get('/completion-time', controller.completionTime);
+router.get("/completion-time", controller.completionTime);
 
 module.exports = router;

@@ -1,4 +1,4 @@
-require('dotenv').config();
+require("dotenv").config();
 
 /**
  * Knex configuration
@@ -10,21 +10,21 @@ const baseConnection = process.env.DATABASE_URL
   ? {
       connectionString: process.env.DATABASE_URL,
       ssl:
-        process.env.NODE_ENV === 'production'
+        process.env.NODE_ENV === "production"
           ? { rejectUnauthorized: false }
           : false,
     }
   : {
-      host: process.env.POSTGRES_HOST || 'postgres',
+      host: process.env.POSTGRES_HOST || "postgres",
       port: Number(process.env.POSTGRES_PORT) || 5432,
-      user: process.env.POSTGRES_USER || 'taskadmin',
-      password: process.env.POSTGRES_PASSWORD || 'taskpassword',
-      database: process.env.POSTGRES_DB || 'tasktracker',
+      user: process.env.POSTGRES_USER || "taskadmin",
+      password: process.env.POSTGRES_PASSWORD || "taskpassword",
+      database: process.env.POSTGRES_DB || "tasktracker",
     };
 
 /** @type {import('knex').Knex.Config} */
 module.exports = {
-  client: 'pg',
+  client: "pg",
   connection: baseConnection,
   pool: {
     min: 2,
@@ -33,12 +33,12 @@ module.exports = {
     idleTimeoutMillis: 30000,
   },
   migrations: {
-    directory: './migrations',
-    tableName: 'knex_migrations',
-    extension: 'js',
+    directory: "./migrations",
+    tableName: "knex_migrations",
+    extension: "js",
   },
   seeds: {
-    directory: './seeds',
-    extension: 'js',
+    directory: "./seeds",
+    extension: "js",
   },
 };

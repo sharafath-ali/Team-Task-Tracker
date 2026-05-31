@@ -1,9 +1,14 @@
-const router = require('express').Router();
-const controller = require('./tasks.controller');
-const { authenticate } = require('../../middleware/auth.middleware');
-const { authorize } = require('../../middleware/rbac.middleware');
-const { validate } = require('../../middleware/validate.middleware');
-const { createTaskSchema, updateTaskSchema, updateStatusSchema, listTasksSchema } = require('./tasks.validation');
+const router = require("express").Router();
+const controller = require("./tasks.controller");
+const { authenticate } = require("../../middleware/auth.middleware");
+const { authorize } = require("../../middleware/rbac.middleware");
+const { validate } = require("../../middleware/validate.middleware");
+const {
+  createTaskSchema,
+  updateTaskSchema,
+  updateStatusSchema,
+  listTasksSchema,
+} = require("./tasks.validation");
 
 /**
  * @swagger
@@ -38,7 +43,12 @@ const { createTaskSchema, updateTaskSchema, updateStatusSchema, listTasksSchema 
  *       200:
  *         description: Task list with pagination metadata
  */
-router.get('/', authenticate, validate(listTasksSchema, 'query'), controller.list);
+router.get(
+  "/",
+  authenticate,
+  validate(listTasksSchema, "query"),
+  controller.list,
+);
 
 /**
  * @swagger
@@ -61,7 +71,13 @@ router.get('/', authenticate, validate(listTasksSchema, 'query'), controller.lis
  *               project_id:  { type: string, format: uuid }
  *               due_date:    { type: string, format: date }
  */
-router.post('/', authenticate, authorize('ADMIN', 'MANAGER'), validate(createTaskSchema), controller.create);
+router.post(
+  "/",
+  authenticate,
+  authorize("ADMIN", "MANAGER"),
+  validate(createTaskSchema),
+  controller.create,
+);
 
 /**
  * @swagger
@@ -70,7 +86,7 @@ router.post('/', authenticate, authorize('ADMIN', 'MANAGER'), validate(createTas
  *     summary: Get task by ID
  *     tags: [Tasks]
  */
-router.get('/:id', authenticate, controller.getOne);
+router.get("/:id", authenticate, controller.getOne);
 
 /**
  * @swagger
@@ -79,7 +95,12 @@ router.get('/:id', authenticate, controller.getOne);
  *     summary: Update task fields. MEMBER can only update their own assigned tasks.
  *     tags: [Tasks]
  */
-router.patch('/:id', authenticate, validate(updateTaskSchema), controller.update);
+router.patch(
+  "/:id",
+  authenticate,
+  validate(updateTaskSchema),
+  controller.update,
+);
 
 /**
  * @swagger
@@ -104,7 +125,12 @@ router.patch('/:id', authenticate, validate(updateTaskSchema), controller.update
  *             properties:
  *               status: { type: string, enum: [TODO, IN_PROGRESS, IN_REVIEW, DONE, BLOCKED] }
  */
-router.patch('/:id/status', authenticate, validate(updateStatusSchema), controller.updateStatus);
+router.patch(
+  "/:id/status",
+  authenticate,
+  validate(updateStatusSchema),
+  controller.updateStatus,
+);
 
 /**
  * @swagger
@@ -113,6 +139,11 @@ router.patch('/:id/status', authenticate, validate(updateStatusSchema), controll
  *     summary: Delete a task (ADMIN or MANAGER)
  *     tags: [Tasks]
  */
-router.delete('/:id', authenticate, authorize('ADMIN', 'MANAGER'), controller.remove);
+router.delete(
+  "/:id",
+  authenticate,
+  authorize("ADMIN", "MANAGER"),
+  controller.remove,
+);
 
 module.exports = router;

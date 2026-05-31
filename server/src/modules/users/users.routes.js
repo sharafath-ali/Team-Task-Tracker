@@ -1,9 +1,13 @@
-const router = require('express').Router();
-const controller = require('./users.controller');
-const { authenticate } = require('../../middleware/auth.middleware');
-const { authorize } = require('../../middleware/rbac.middleware');
-const { validate } = require('../../middleware/validate.middleware');
-const { createUserSchema, updateUserSchema, listUsersSchema } = require('./users.validation');
+const router = require("express").Router();
+const controller = require("./users.controller");
+const { authenticate } = require("../../middleware/auth.middleware");
+const { authorize } = require("../../middleware/rbac.middleware");
+const { validate } = require("../../middleware/validate.middleware");
+const {
+  createUserSchema,
+  updateUserSchema,
+  listUsersSchema,
+} = require("./users.validation");
 
 // GET /users is accessible to ADMIN and MANAGER (needed for member dropdowns)
 // All mutating routes remain ADMIN-only (enforced per-route below)
@@ -38,7 +42,7 @@ router.use(authenticate);
  *       403:
  *         description: Forbidden — ADMIN only
  */
-router.get('/', validate(listUsersSchema, 'query'), controller.list);
+router.get("/", validate(listUsersSchema, "query"), controller.list);
 
 /**
  * @swagger
@@ -47,7 +51,12 @@ router.get('/', validate(listUsersSchema, 'query'), controller.list);
  *     summary: Create/invite a user into the organization
  *     tags: [Users]
  */
-router.post('/', authorize('ADMIN'), validate(createUserSchema), controller.create);
+router.post(
+  "/",
+  authorize("ADMIN"),
+  validate(createUserSchema),
+  controller.create,
+);
 
 /**
  * @swagger
@@ -61,7 +70,7 @@ router.post('/', authorize('ADMIN'), validate(createUserSchema), controller.crea
  *         required: true
  *         schema: { type: string, format: uuid }
  */
-router.get('/:id', controller.getOne);
+router.get("/:id", controller.getOne);
 
 /**
  * @swagger
@@ -70,7 +79,12 @@ router.get('/:id', controller.getOne);
  *     summary: Update user role or active status
  *     tags: [Users]
  */
-router.patch('/:id', authorize('ADMIN'), validate(updateUserSchema), controller.update);
+router.patch(
+  "/:id",
+  authorize("ADMIN"),
+  validate(updateUserSchema),
+  controller.update,
+);
 
 /**
  * @swagger
@@ -79,6 +93,6 @@ router.patch('/:id', authorize('ADMIN'), validate(updateUserSchema), controller.
  *     summary: Deactivate a user (soft delete)
  *     tags: [Users]
  */
-router.delete('/:id', authorize('ADMIN'), controller.deactivate);
+router.delete("/:id", authorize("ADMIN"), controller.deactivate);
 
 module.exports = router;

@@ -1,9 +1,9 @@
 /** @param {import('knex').Knex} knex */
 exports.up = async (knex) => {
-  await knex.schema.createTable('organizations', (t) => {
-    t.uuid('id').primary().defaultTo(knex.raw('gen_random_uuid()'));
-    t.string('name', 255).notNullable().unique();
-    t.string('slug', 255).notNullable().unique();
+  await knex.schema.createTable("organizations", (t) => {
+    t.uuid("id").primary().defaultTo(knex.raw("gen_random_uuid()"));
+    t.string("name", 255).notNullable().unique();
+    t.string("slug", 255).notNullable().unique();
     t.timestamps(true, true); // created_at, updated_at with DEFAULT NOW()
   });
 
@@ -27,6 +27,6 @@ exports.up = async (knex) => {
 
 /** @param {import('knex').Knex} knex */
 exports.down = async (knex) => {
-  await knex.schema.dropTableIfExists('organizations');
-  await knex.raw('DROP FUNCTION IF EXISTS update_updated_at_column CASCADE');
+  await knex.schema.dropTableIfExists("organizations");
+  await knex.raw("DROP FUNCTION IF EXISTS update_updated_at_column CASCADE");
 };

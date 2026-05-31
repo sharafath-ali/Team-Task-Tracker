@@ -1,8 +1,12 @@
-const router = require('express').Router();
-const controller = require('./auth.controller');
-const { validate } = require('../../middleware/validate.middleware');
-const { authenticate } = require('../../middleware/auth.middleware');
-const { registerSchema, loginSchema, refreshSchema } = require('./auth.validation');
+const router = require("express").Router();
+const controller = require("./auth.controller");
+const { validate } = require("../../middleware/validate.middleware");
+const { authenticate } = require("../../middleware/auth.middleware");
+const {
+  registerSchema,
+  loginSchema,
+  refreshSchema,
+} = require("./auth.validation");
 
 /**
  * @swagger
@@ -39,7 +43,7 @@ const { registerSchema, loginSchema, refreshSchema } = require('./auth.validatio
  *           application/json:
  *             schema: { $ref: '#/components/schemas/Error' }
  */
-router.post('/register', validate(registerSchema), controller.register);
+router.post("/register", validate(registerSchema), controller.register);
 
 /**
  * @swagger
@@ -64,7 +68,7 @@ router.post('/register', validate(registerSchema), controller.register);
  *       401:
  *         description: Invalid credentials
  */
-router.post('/login', validate(loginSchema), controller.login);
+router.post("/login", validate(loginSchema), controller.login);
 
 /**
  * @swagger
@@ -88,7 +92,7 @@ router.post('/login', validate(loginSchema), controller.login);
  *       401:
  *         description: Token invalid, expired, or already revoked
  */
-router.post('/refresh', validate(refreshSchema), controller.refresh);
+router.post("/refresh", validate(refreshSchema), controller.refresh);
 
 /**
  * @swagger
@@ -107,7 +111,7 @@ router.post('/refresh', validate(refreshSchema), controller.refresh);
  *       200:
  *         description: Logged out successfully
  */
-router.post('/logout', authenticate, controller.logout);
+router.post("/logout", authenticate, controller.logout);
 
 /**
  * @swagger
@@ -121,6 +125,6 @@ router.post('/logout', authenticate, controller.logout);
  *       401:
  *         description: Not authenticated
  */
-router.get('/me', authenticate, controller.me);
+router.get("/me", authenticate, controller.me);
 
 module.exports = router;
