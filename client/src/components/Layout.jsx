@@ -18,37 +18,51 @@ export default function Layout() {
   return (
     <div className="app-layout">
       <aside className="sidebar">
+        {/* Logo */}
         <div className="sidebar-logo">
           <div className="sidebar-logo-icon">✓</div>
           <span className="sidebar-logo-text">TaskTracker</span>
         </div>
 
-        <NavLink to="/" end className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
-          <LayoutDashboard size={17} />
-          Dashboard
-        </NavLink>
+        {/* Navigation */}
+        <nav className="sidebar-nav">
+          <span className="sidebar-section-label">Workspace</span>
 
-        {user?.role === 'ADMIN' && (
-          <NavLink to="/users" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
-            <Users size={17} />
-            Users
+          <NavLink
+            to="/"
+            end
+            className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
+          >
+            <LayoutDashboard size={15} />
+            Dashboard
           </NavLink>
-        )}
 
+          {user?.role === 'ADMIN' && (
+            <NavLink
+              to="/users"
+              className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
+            >
+              <Users size={15} />
+              Users
+            </NavLink>
+          )}
+        </nav>
+
+        {/* Footer — user info */}
         <div className="sidebar-footer">
-          <div className="user-info">
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
-              <div className="assignee-avatar" style={{ width: 32, height: 32, fontSize: '0.75rem' }}>{initials}</div>
-              <div>
-                <div className="user-name">{user?.name}</div>
-                <span className={`user-role role-${user?.role}`}>{user?.role}</span>
-              </div>
+          <div className="user-card">
+            <div className="user-avatar">{initials}</div>
+            <div className="user-details">
+              <div className="user-name">{user?.name}</div>
+              <span className={`user-role-badge role-${user?.role}`}>{user?.role}</span>
             </div>
-            <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginBottom: 10 }}>{user?.org_name}</div>
           </div>
-          <button className="nav-item btn-ghost" onClick={handleLogout}>
-            <LogOut size={17} />
-            Sign Out
+          {user?.org_name && (
+            <div className="user-org">{user.org_name}</div>
+          )}
+          <button className="nav-item" style={{ marginTop: 2 }} onClick={handleLogout}>
+            <LogOut size={14} />
+            Sign out
           </button>
         </div>
       </aside>

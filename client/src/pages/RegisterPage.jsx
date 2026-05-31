@@ -22,7 +22,7 @@ export default function RegisterPage() {
       setAuth(data.data.user, data.data.accessToken, data.data.refreshToken);
       navigate('/');
     } catch (err) {
-      setError(err.response?.data?.message || 'Registration failed');
+      setError(err.response?.data?.message || 'Registration failed. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -32,41 +32,125 @@ export default function RegisterPage() {
 
   return (
     <div className="auth-page">
-      <div className="auth-card">
-        <div className="auth-logo">
+      {/* Left — Branding panel */}
+      <div className="auth-panel-left">
+        <div className="auth-panel-brand">
           <div className="auth-logo-icon">✓</div>
           <span className="auth-logo-text">TaskTracker</span>
         </div>
-        <h1 className="auth-title">Create your workspace</h1>
-        <p className="auth-subtitle">You'll be the ADMIN of your organization</p>
 
-        {error && <div className="alert alert-error">{error}</div>}
+        <div className="auth-panel-content">
+          <h2 className="auth-panel-title">
+            Set up your team's workspace
+          </h2>
+          <p className="auth-panel-subtitle">
+            Create your organization and start managing tasks with your team. You'll be the Admin with full control.
+          </p>
+          <ul className="auth-feature-list">
+            <li>
+              <span className="auth-feature-icon">✓</span>
+              Invite unlimited team members
+            </li>
+            <li>
+              <span className="auth-feature-icon">✓</span>
+              Create projects and assign tasks
+            </li>
+            <li>
+              <span className="auth-feature-icon">✓</span>
+              Control access with role permissions
+            </li>
+            <li>
+              <span className="auth-feature-icon">✓</span>
+              Track progress across your whole team
+            </li>
+          </ul>
+        </div>
 
-        <form onSubmit={handleSubmit}>
-          <div className="form-group">
-            <label className="form-label">Organization Name</label>
-            <input className="form-input" placeholder="Acme Corp" value={form.orgName} onChange={set('orgName')} required />
-          </div>
-          <div className="form-group">
-            <label className="form-label">Your Name</label>
-            <input className="form-input" placeholder="Alice Smith" value={form.name} onChange={set('name')} required />
-          </div>
-          <div className="form-group">
-            <label className="form-label">Email</label>
-            <input className="form-input" type="email" placeholder="you@company.com" value={form.email} onChange={set('email')} required />
-          </div>
-          <div className="form-group">
-            <label className="form-label">Password</label>
-            <input className="form-input" type="password" placeholder="Min 8 characters" value={form.password} onChange={set('password')} required minLength={8} />
-          </div>
-          <button className="btn btn-primary btn-full" type="submit" disabled={loading}>
-            {loading ? 'Creating workspace...' : 'Create Workspace'}
-          </button>
-        </form>
+        <div className="auth-panel-footer">
+          © 2024 TaskTracker. Built for productive teams.
+        </div>
+      </div>
 
-        <div style={{ textAlign: 'center', marginTop: '1.5rem', fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
-          Already have an account?{' '}
-          <Link to="/login" style={{ color: 'var(--primary)', textDecoration: 'none', fontWeight: 500 }}>Sign in</Link>
+      {/* Right — Register form */}
+      <div className="auth-panel-right">
+        <div className="auth-form-container">
+          <h1 className="auth-title">Create your workspace</h1>
+          <p className="auth-subtitle">You'll be the Admin of your organization.</p>
+
+          {error && (
+            <div className="alert alert-error" role="alert">
+              {error}
+            </div>
+          )}
+
+          <form onSubmit={handleSubmit} noValidate>
+            <div className="form-group">
+              <label className="form-label" htmlFor="reg-org">Organization name</label>
+              <input
+                id="reg-org"
+                className="form-input"
+                placeholder="Acme Corp"
+                value={form.orgName}
+                onChange={set('orgName')}
+                required
+              />
+            </div>
+            <div className="form-group">
+              <label className="form-label" htmlFor="reg-name">Your full name</label>
+              <input
+                id="reg-name"
+                className="form-input"
+                placeholder="Alice Smith"
+                value={form.name}
+                onChange={set('name')}
+                required
+              />
+            </div>
+            <div className="form-group">
+              <label className="form-label" htmlFor="reg-email">Work email</label>
+              <input
+                id="reg-email"
+                className="form-input"
+                type="email"
+                placeholder="you@company.com"
+                value={form.email}
+                onChange={set('email')}
+                required
+                autoComplete="email"
+              />
+            </div>
+            <div className="form-group">
+              <label className="form-label" htmlFor="reg-password">Password</label>
+              <input
+                id="reg-password"
+                className="form-input"
+                type="password"
+                placeholder="Minimum 8 characters"
+                value={form.password}
+                onChange={set('password')}
+                required
+                minLength={8}
+                autoComplete="new-password"
+              />
+            </div>
+
+            <div style={{ marginTop: '1.25rem' }}>
+              <button
+                id="register-submit"
+                className="btn btn-primary btn-full"
+                type="submit"
+                disabled={loading}
+                style={{ padding: '9px 18px', fontSize: '0.875rem' }}
+              >
+                {loading ? 'Creating workspace…' : 'Create Workspace'}
+              </button>
+            </div>
+          </form>
+
+          <div className="auth-footer-text">
+            Already have an account?{' '}
+            <Link to="/login" className="auth-link">Sign in</Link>
+          </div>
         </div>
       </div>
     </div>

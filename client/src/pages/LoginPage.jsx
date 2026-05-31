@@ -19,7 +19,7 @@ export default function LoginPage() {
       setAuth(data.data.user, data.data.accessToken, data.data.refreshToken);
       navigate('/');
     } catch (err) {
-      setError(err.response?.data?.message || 'Login failed');
+      setError(err.response?.data?.message || 'Login failed. Please check your credentials.');
     } finally {
       setLoading(false);
     }
@@ -27,42 +27,107 @@ export default function LoginPage() {
 
   return (
     <div className="auth-page">
-      <div className="auth-card">
-        <div className="auth-logo">
+      {/* Left — Branding panel */}
+      <div className="auth-panel-left">
+        <div className="auth-panel-brand">
           <div className="auth-logo-icon">✓</div>
           <span className="auth-logo-text">TaskTracker</span>
         </div>
-        <h1 className="auth-title">Welcome back</h1>
-        <p className="auth-subtitle">Sign in to your workspace</p>
 
-        {error && <div className="alert alert-error">{error}</div>}
-
-        <form onSubmit={handleSubmit}>
-          <div className="form-group">
-            <label className="form-label">Email</label>
-            <input className="form-input" type="email" placeholder="you@company.com"
-              value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} required />
-          </div>
-          <div className="form-group">
-            <label className="form-label">Password</label>
-            <input className="form-input" type="password" placeholder="••••••••"
-              value={form.password} onChange={e => setForm({ ...form, password: e.target.value })} required />
-          </div>
-          <button className="btn btn-primary btn-full" type="submit" disabled={loading}>
-            {loading ? 'Signing in...' : 'Sign In'}
-          </button>
-        </form>
-
-        <div style={{ textAlign: 'center', marginTop: '1.5rem', fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
-          No account?{' '}
-          <Link to="/register" style={{ color: 'var(--primary)', textDecoration: 'none', fontWeight: 500 }}>
-            Create organization
-          </Link>
+        <div className="auth-panel-content">
+          <h2 className="auth-panel-title">
+            Manage your team's work in one place
+          </h2>
+          <p className="auth-panel-subtitle">
+            A focused task management platform for teams who value clarity, accountability, and results.
+          </p>
+          <ul className="auth-feature-list">
+            <li>
+              <span className="auth-feature-icon">✓</span>
+              Role-based access — Admin, Manager, Member
+            </li>
+            <li>
+              <span className="auth-feature-icon">✓</span>
+              Kanban board with status workflows
+            </li>
+            <li>
+              <span className="auth-feature-icon">✓</span>
+              Priority tracking and due date management
+            </li>
+            <li>
+              <span className="auth-feature-icon">✓</span>
+              Project-based task organization
+            </li>
+          </ul>
         </div>
 
-        <div style={{ marginTop: '1.5rem', padding: '1rem', background: 'rgba(99,102,241,0.08)', borderRadius: 8, fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-          <strong style={{ color: 'var(--text-primary)' }}>Demo credentials</strong>
-          <div style={{ marginTop: 6, lineHeight: 1.8 }}>
+        <div className="auth-panel-footer">
+          © 2024 TaskTracker. Built for productive teams.
+        </div>
+      </div>
+
+      {/* Right — Login form */}
+      <div className="auth-panel-right">
+        <div className="auth-form-container">
+          <h1 className="auth-title">Sign in to your account</h1>
+          <p className="auth-subtitle">Welcome back. Enter your credentials to continue.</p>
+
+          {error && (
+            <div className="alert alert-error" role="alert">
+              {error}
+            </div>
+          )}
+
+          <form onSubmit={handleSubmit} noValidate>
+            <div className="form-group">
+              <label className="form-label" htmlFor="login-email">Email address</label>
+              <input
+                id="login-email"
+                className="form-input"
+                type="email"
+                placeholder="you@company.com"
+                value={form.email}
+                onChange={e => setForm({ ...form, email: e.target.value })}
+                required
+                autoComplete="email"
+              />
+            </div>
+            <div className="form-group">
+              <label className="form-label" htmlFor="login-password">Password</label>
+              <input
+                id="login-password"
+                className="form-input"
+                type="password"
+                placeholder="Enter your password"
+                value={form.password}
+                onChange={e => setForm({ ...form, password: e.target.value })}
+                required
+                autoComplete="current-password"
+              />
+            </div>
+
+            <div style={{ marginTop: '1.25rem' }}>
+              <button
+                id="login-submit"
+                className="btn btn-primary btn-full"
+                type="submit"
+                disabled={loading}
+                style={{ padding: '9px 18px', fontSize: '0.875rem' }}
+              >
+                {loading ? 'Signing in…' : 'Sign In'}
+              </button>
+            </div>
+          </form>
+
+          <div className="auth-footer-text">
+            Don't have an account?{' '}
+            <Link to="/register" className="auth-link">Create organization</Link>
+          </div>
+
+          <div className="auth-divider" />
+
+          <div className="demo-box">
+            <strong>Demo credentials</strong>
             admin@demo.com / password123<br />
             manager@demo.com / password123<br />
             member@demo.com / password123
