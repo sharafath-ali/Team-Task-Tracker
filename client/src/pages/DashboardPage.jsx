@@ -212,24 +212,28 @@ export default function DashboardPage() {
                 </div>
 
                 {tasksByStatus[col.key]?.length === 0 ? (
-                  <div className="empty-column">
-                    <div className="empty-column-icon">○</div>
-                    No tasks
+                  <div className="kanban-column-cards">
+                    <div className="empty-column">
+                      <div className="empty-column-icon">○</div>
+                      No tasks
+                    </div>
                   </div>
                 ) : (
-                  tasksByStatus[col.key].map((task) => (
-                    <TaskCard
-                      key={task.id}
-                      task={task}
-                      userRole={user?.role}
-                      userId={user?.id}
-                      transitions={TRANSITIONS[task.status] || []}
-                      onStatusChange={(status) =>
-                        statusMut.mutate({ id: task.id, status })
-                      }
-                      onClick={() => setSelectedTask(task)}
-                    />
-                  ))
+                  <div className="kanban-column-cards">
+                    {tasksByStatus[col.key].map((task) => (
+                      <TaskCard
+                        key={task.id}
+                        task={task}
+                        userRole={user?.role}
+                        userId={user?.id}
+                        transitions={TRANSITIONS[task.status] || []}
+                        onStatusChange={(status) =>
+                          statusMut.mutate({ id: task.id, status })
+                        }
+                        onClick={() => setSelectedTask(task)}
+                      />
+                    ))}
+                  </div>
                 )}
               </div>
             ))}

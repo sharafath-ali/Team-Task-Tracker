@@ -773,7 +773,8 @@ body,
   gap: 0.875rem;
   overflow-x: auto;
   padding-bottom: 1rem;
-  align-items: start;
+  /* Remove align-items: start so all columns stretch to equal height */
+  align-items: stretch;
 }
 
 .kanban-column {
@@ -781,11 +782,40 @@ body,
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   padding: 0.75rem;
+  /* Fixed height: columns never grow taller than viewport */
   min-height: 400px;
+  max-height: calc(100vh - 280px);
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+/* Scrollable card area inside each column */
+.kanban-column-cards {
+  flex: 1;
+  overflow-y: auto;
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
+  padding-right: 2px;
+  /* Custom thin scrollbar */
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-strong) transparent;
 }
+
+.kanban-column-cards::-webkit-scrollbar {
+  width: 4px;
+}
+
+.kanban-column-cards::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.kanban-column-cards::-webkit-scrollbar-thumb {
+  background: var(--border-strong);
+  border-radius: 99px;
+}
+
 
 /* Column top border accent */
 .col-TODO {
