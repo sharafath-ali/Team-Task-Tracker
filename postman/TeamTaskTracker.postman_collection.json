@@ -1,0 +1,725 @@
+{
+  "info": {
+    "_postman_id": "ttt-2024-collection-v1",
+    "name": "Team Task Tracker API",
+    "description": "Complete REST API collection for the Team Task Tracker assignment.\n\n**Base URL:** `http://localhost:5000`\n\n**How to use:**\n1. Run `docker compose up` in the project root\n2. Call **Auth → Register** to create your org + admin account\n3. Call **Auth → Login** — the collection auto-saves the `accessToken` and `refreshToken` into collection variables\n4. All authenticated requests use `{{accessToken}}` automatically\n\n**Swagger UI:** http://localhost:5000/api/docs\n\n**Roles:** ADMIN | MANAGER | MEMBER\n\n**Task status transitions (server-enforced):**\n```\nTODO → IN_PROGRESS → IN_REVIEW → DONE\n  \\          \\            /\n   \\──────────► BLOCKED ◄─\n```",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:5000",
+      "type": "string"
+    },
+    {
+      "key": "accessToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "refreshToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "userId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "orgId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "projectId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "taskId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "memberId",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{accessToken}}",
+        "type": "string"
+      }
+    ]
+  },
+  "item": [
+    {
+      "name": "🔒 Auth",
+      "description": "Authentication endpoints — register, login, token rotation, logout, and current user profile.",
+      "item": [
+        {
+          "name": "Register (create org + admin user)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "  const body = pm.response.json();",
+                  "  pm.collectionVariables.set('accessToken',  body.data.accessToken);",
+                  "  pm.collectionVariables.set('refreshToken', body.data.refreshToken);",
+                  "  pm.collectionVariables.set('userId',       body.data.user.id);",
+                  "  pm.collectionVariables.set('orgId',        body.data.user.org_id);",
+                  "  pm.test('Register successful', () => pm.expect(pm.response.code).to.equal(201));",
+                  "  pm.test('Has access token',   () => pm.expect(body.data.accessToken).to.be.a('string'));",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"orgName\": \"Acme Corp\",\n  \"name\": \"Alice Smith\",\n  \"email\": \"alice@acme.com\",\n  \"password\": \"password123\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/register",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "register"]
+            },
+            "description": "Creates a new organization and the first ADMIN user. Returns an access token (15m TTL) and a refresh token (7d TTL)."
+          }
+        },
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "  const body = pm.response.json();",
+                  "  pm.collectionVariables.set('accessToken',  body.data.accessToken);",
+                  "  pm.collectionVariables.set('refreshToken', body.data.refreshToken);",
+                  "  pm.collectionVariables.set('userId',       body.data.user.id);",
+                  "  pm.collectionVariables.set('orgId',        body.data.user.org_id);",
+                  "  pm.test('Login successful',  () => pm.expect(pm.response.code).to.equal(200));",
+                  "  pm.test('Has access token',  () => pm.expect(body.data.accessToken).to.be.a('string'));",
+                  "  pm.test('Has refresh token', () => pm.expect(body.data.refreshToken).to.be.a('string'));",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"alice@acme.com\",\n  \"password\": \"password123\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "login"]
+            },
+            "description": "Returns accessToken (15m) and refreshToken (7d). The test script auto-saves both into collection variables."
+          }
+        },
+        {
+          "name": "Refresh Token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "  const body = pm.response.json();",
+                  "  pm.collectionVariables.set('accessToken',  body.data.accessToken);",
+                  "  pm.collectionVariables.set('refreshToken', body.data.refreshToken);",
+                  "  pm.test('Token rotated',    () => pm.expect(pm.response.code).to.equal(200));",
+                  "  pm.test('New access token', () => pm.expect(body.data.accessToken).to.be.a('string'));",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/refresh",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "refresh"]
+            },
+            "description": "Rotates the refresh token — the old token is revoked immediately, a new pair is issued."
+          }
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/logout",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "logout"]
+            },
+            "description": "Revokes the provided refresh token. Future refresh calls with this token will return 401."
+          }
+        },
+        {
+          "name": "Get Current User (me)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/me",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "me"]
+            },
+            "description": "Returns the authenticated user's profile along with their organization details."
+          }
+        }
+      ]
+    },
+    {
+      "name": "👥 Users",
+      "description": "User management. LIST is accessible to ADMIN and MANAGER. All mutations (create, update, delete) are ADMIN-only.",
+      "item": [
+        {
+          "name": "List Users",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/users?page=1&limit=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "users"],
+              "query": [
+                { "key": "page",  "value": "1"  },
+                { "key": "limit", "value": "20" },
+                { "key": "role",  "value": "",  "description": "Filter by role: ADMIN | MANAGER | MEMBER", "disabled": true }
+              ]
+            },
+            "description": "Lists all active users in the authenticated user's organization. Supports pagination and role filtering."
+          }
+        },
+        {
+          "name": "Create User (ADMIN only)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "  const body = pm.response.json();",
+                  "  pm.collectionVariables.set('memberId', body.data.id);",
+                  "  pm.test('User created', () => pm.expect(pm.response.code).to.equal(201));",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Bob Manager\",\n  \"email\": \"bob@acme.com\",\n  \"password\": \"password123\",\n  \"role\": \"MANAGER\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/users",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "users"]
+            },
+            "description": "Creates/invites a new user into the organization. ADMIN only. Valid roles: ADMIN, MANAGER, MEMBER."
+          }
+        },
+        {
+          "name": "Get User by ID",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/users/{{memberId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "users", "{{memberId}}"]
+            }
+          }
+        },
+        {
+          "name": "Update User (ADMIN only)",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"role\": \"MEMBER\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/users/{{memberId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "users", "{{memberId}}"]
+            },
+            "description": "Update a user's role or is_active status. ADMIN only."
+          }
+        },
+        {
+          "name": "Deactivate User (ADMIN only)",
+          "request": {
+            "method": "DELETE",
+            "url": {
+              "raw": "{{baseUrl}}/api/users/{{memberId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "users", "{{memberId}}"]
+            },
+            "description": "Soft-deactivates a user (sets is_active = false). ADMIN only. User is not deleted from DB."
+          }
+        }
+      ]
+    },
+    {
+      "name": "📁 Projects",
+      "description": "Project management — ADMIN and MANAGER can create/edit. All authenticated users can list/view.",
+      "item": [
+        {
+          "name": "List Projects",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/projects?page=1&limit=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "projects"],
+              "query": [
+                { "key": "page",  "value": "1"  },
+                { "key": "limit", "value": "20" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create Project",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "  const body = pm.response.json();",
+                  "  pm.collectionVariables.set('projectId', body.data.id);",
+                  "  pm.test('Project created', () => pm.expect(pm.response.code).to.equal(201));",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Website Redesign\",\n  \"description\": \"Revamp the company website with a new design system.\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/projects",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "projects"]
+            }
+          }
+        },
+        {
+          "name": "Get Project by ID",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/projects/{{projectId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "projects", "{{projectId}}"]
+            }
+          }
+        },
+        {
+          "name": "Update Project",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Website Redesign v2\",\n  \"description\": \"Updated scope — includes mobile responsiveness.\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/projects/{{projectId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "projects", "{{projectId}}"]
+            }
+          }
+        },
+        {
+          "name": "Delete Project",
+          "request": {
+            "method": "DELETE",
+            "url": {
+              "raw": "{{baseUrl}}/api/projects/{{projectId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "projects", "{{projectId}}"]
+            }
+          }
+        },
+        {
+          "name": "List Project Members",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/projects/{{projectId}}/members",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "projects", "{{projectId}}", "members"]
+            }
+          }
+        },
+        {
+          "name": "Add Project Member",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userId\": \"{{memberId}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/projects/{{projectId}}/members",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "projects", "{{projectId}}", "members"]
+            }
+          }
+        },
+        {
+          "name": "Remove Project Member",
+          "request": {
+            "method": "DELETE",
+            "url": {
+              "raw": "{{baseUrl}}/api/projects/{{projectId}}/members/{{memberId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "projects", "{{projectId}}", "members", "{{memberId}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "✅ Tasks",
+      "description": "Task management with enforced status transitions and Redis caching.\n\n**Status state machine:**\n- TODO → IN_PROGRESS, BLOCKED\n- IN_PROGRESS → IN_REVIEW, BLOCKED\n- IN_REVIEW → DONE, IN_PROGRESS, BLOCKED\n- BLOCKED → TODO, IN_PROGRESS\n- DONE → (terminal)\n\n**MEMBER** can only see/update tasks assigned to them. Task list responses are cached in Redis.",
+      "item": [
+        {
+          "name": "List Tasks (paginated + filtered)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/tasks?page=1&limit=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "tasks"],
+              "query": [
+                { "key": "page",     "value": "1"           },
+                { "key": "limit",    "value": "20"          },
+                { "key": "status",   "value": "TODO",       "disabled": true, "description": "TODO | IN_PROGRESS | IN_REVIEW | DONE | BLOCKED" },
+                { "key": "priority", "value": "HIGH",       "disabled": true, "description": "LOW | MEDIUM | HIGH" },
+                { "key": "assignee", "value": "{{memberId}}","disabled": true, "description": "UUID of assignee — ignored for MEMBER role" },
+                { "key": "project_id","value": "{{projectId}}","disabled": true }
+              ]
+            },
+            "description": "Returns paginated task list. MEMBER role is forced to see only their own tasks regardless of the `assignee` filter. Responses are served from Redis cache when available."
+          }
+        },
+        {
+          "name": "Create Task (ADMIN / MANAGER)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "  const body = pm.response.json();",
+                  "  pm.collectionVariables.set('taskId', body.data.id);",
+                  "  pm.test('Task created', () => pm.expect(pm.response.code).to.equal(201));",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Design homepage mockup\",\n  \"description\": \"Create Figma mockup for the new homepage based on the updated brand guide.\",\n  \"priority\": \"HIGH\",\n  \"project_id\": \"{{projectId}}\",\n  \"assignee_id\": \"{{memberId}}\",\n  \"due_date\": \"2024-12-31\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/tasks",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "tasks"]
+            },
+            "description": "Creates a new task. `project_id` is required. `assignee_id` must be a user in the same organization. Initial status is always TODO."
+          }
+        },
+        {
+          "name": "Get Task by ID",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/tasks/{{taskId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "tasks", "{{taskId}}"]
+            },
+            "description": "Returns full task details including assignee name, creator name, and project name. MEMBER can only access tasks assigned to them."
+          }
+        },
+        {
+          "name": "Update Task Fields",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Design homepage mockup (revised)\",\n  \"description\": \"Updated scope — include mobile breakpoints.\",\n  \"priority\": \"MEDIUM\",\n  \"due_date\": \"2024-11-30\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/tasks/{{taskId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "tasks", "{{taskId}}"]
+            },
+            "description": "Update task title, description, priority, assignee, or due_date. Does NOT change status — use the /status endpoint for that. MEMBER can only update tasks assigned to them."
+          }
+        },
+        {
+          "name": "Advance Task Status → IN_PROGRESS",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"IN_PROGRESS\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/tasks/{{taskId}}/status",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "tasks", "{{taskId}}", "status"]
+            },
+            "description": "Enforced state machine. TODO → IN_PROGRESS is valid. An invalid transition (e.g. TODO → DONE) will return 422 INVALID_TRANSITION. Only the assignee or MANAGER/ADMIN can call this."
+          }
+        },
+        {
+          "name": "Advance Task Status → IN_REVIEW",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"IN_REVIEW\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/tasks/{{taskId}}/status",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "tasks", "{{taskId}}", "status"]
+            }
+          }
+        },
+        {
+          "name": "Advance Task Status → DONE",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"DONE\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/tasks/{{taskId}}/status",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "tasks", "{{taskId}}", "status"]
+            },
+            "description": "Sets completed_at timestamp. DONE is a terminal state — no further transitions allowed."
+          }
+        },
+        {
+          "name": "Block a Task",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"BLOCKED\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/tasks/{{taskId}}/status",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "tasks", "{{taskId}}", "status"]
+            },
+            "description": "BLOCKED is reachable from TODO, IN_PROGRESS, or IN_REVIEW."
+          }
+        },
+        {
+          "name": "Invalid Transition (expect 422)",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"DONE\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/tasks/{{taskId}}/status",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "tasks", "{{taskId}}", "status"]
+            },
+            "description": "Demonstrates server-side transition enforcement. If current status is TODO, jumping directly to DONE returns 422 INVALID_TRANSITION."
+          }
+        },
+        {
+          "name": "Delete Task (ADMIN / MANAGER)",
+          "request": {
+            "method": "DELETE",
+            "url": {
+              "raw": "{{baseUrl}}/api/tasks/{{taskId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "tasks", "{{taskId}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "📊 Analytics (Bonus)",
+      "description": "Bonus analytics endpoints. ADMIN and MANAGER only.",
+      "item": [
+        {
+          "name": "Overdue Tasks per User",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/analytics/overdue",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "analytics", "overdue"]
+            },
+            "description": "Returns each user with a count of tasks whose due_date < NOW() and status is not DONE or BLOCKED. Useful for identifying team members who are falling behind."
+          }
+        },
+        {
+          "name": "Average Completion Time per User",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/analytics/completion-time",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "analytics", "completion-time"]
+            },
+            "description": "Returns each user with their count of completed tasks and average hours from task creation to DONE status. Uses PostgreSQL EXTRACT(EPOCH ...) for precise sub-hour precision."
+          }
+        }
+      ]
+    },
+    {
+      "name": "🏥 Health Check",
+      "item": [
+        {
+          "name": "Health Check",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/health",
+              "host": ["{{baseUrl}}"],
+              "path": ["health"]
+            },
+            "description": "Returns { status: 'ok', timestamp } — use to verify the API is running before testing."
+          }
+        }
+      ]
+    },
+    {
+      "name": "⚡ RBAC Error Cases",
+      "description": "Demonstrates RBAC enforcement — these requests should return 403 FORBIDDEN when called with the correct role restrictions.",
+      "item": [
+        {
+          "name": "MEMBER tries to create a task (expect 403)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Unauthorized task\",\n  \"project_id\": \"{{projectId}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/tasks",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "tasks"]
+            },
+            "description": "Login as a MEMBER user first, then call this. Should return 403 FORBIDDEN since only ADMIN/MANAGER can create tasks."
+          }
+        },
+        {
+          "name": "MANAGER tries to create a user (expect 403)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"New User\",\n  \"email\": \"newuser@acme.com\",\n  \"password\": \"password123\",\n  \"role\": \"MEMBER\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/users",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "users"]
+            },
+            "description": "Login as a MANAGER user first, then call this. Should return 403 FORBIDDEN since only ADMIN can manage users."
+          }
+        },
+        {
+          "name": "MEMBER tries to view analytics (expect 403)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/analytics/overdue",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "analytics", "overdue"]
+            },
+            "description": "Login as a MEMBER user first, then call this. Should return 403 FORBIDDEN."
+          }
+        },
+        {
+          "name": "No token — expect 401",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/tasks",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "tasks"]
+            },
+            "description": "No Authorization header — expect 401 UNAUTHORIZED."
+          }
+        }
+      ]
+    }
+  ]
+}

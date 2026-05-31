@@ -1,0 +1,14 @@
+{
+  "Servers": {
+    "1": {
+      "Name": "Team Task Tracker (Docker)",
+      "Group": "Docker",
+      "Host": "postgres",
+      "Port": 5432,
+      "MaintenanceDB": "tasktracker",
+      "Username": "taskadmin",
+      "SSLMode": "prefer",
+      "PassFile": "/pgpass"
+    }
+  }
+}
