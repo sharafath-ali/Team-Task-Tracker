@@ -39,8 +39,13 @@ export default function BoardPage() {
   const { data, isLoading } = useQuery({
     queryKey: taskQueryKey,
     enabled: !!selectedProject,
-    queryFn: () =>
-      listTasks({ project_id: selectedProject.id, ...filters, limit: 200 }).then(r => r.data.data),
+    queryFn: () => {
+      // Strip empty-string / falsy filter values so they're never sent as query params
+      const cleanFilters = Object.fromEntries(
+        Object.entries(filters).filter(([, v]) => v !== '' && v != null)
+      );
+      return listTasks({ project_id: selectedProject.id, ...cleanFilters, limit: 100 }).then(r => r.data.data);
+    },
   });
 
   // Fetch org users for task assignment

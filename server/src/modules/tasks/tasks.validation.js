@@ -29,10 +29,10 @@ const updateStatusSchema = Joi.object({
 const listTasksSchema = Joi.object({
   page:       Joi.number().integer().min(1).default(1),
   limit:      Joi.number().integer().min(1).max(100).default(20),
-  status:     Joi.string().valid('TODO', 'IN_PROGRESS', 'IN_REVIEW', 'DONE', 'BLOCKED'),
-  priority:   Joi.string().valid('LOW', 'MEDIUM', 'HIGH'),
-  assignee:   Joi.string().uuid(),
-  project_id: Joi.string().uuid(),
+  status:     Joi.string().valid('TODO', 'IN_PROGRESS', 'IN_REVIEW', 'DONE', 'BLOCKED').allow('', null).empty(''),
+  priority:   Joi.string().valid('LOW', 'MEDIUM', 'HIGH').allow('', null).empty(''),
+  assignee:   Joi.string().uuid().allow('', null).empty(''),
+  project_id: Joi.string().uuid().allow('', null).empty(''),
 });
 
 module.exports = { createTaskSchema, updateTaskSchema, updateStatusSchema, listTasksSchema };

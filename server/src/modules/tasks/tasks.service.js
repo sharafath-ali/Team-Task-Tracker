@@ -22,9 +22,10 @@ const listTasks = async ({ orgId, userId, userRole, page = 1, limit = 20, status
   const effectiveAssignee = userRole === 'MEMBER' ? userId : assignee;
 
   const cacheKey = cache.buildTaskCacheKey({
+    projectId:  project_id || 'all',
     assigneeId: effectiveAssignee || 'all',
     page, limit,
-    status: status || 'all',
+    status:   status   || 'all',
     priority: priority || 'all',
   });
 
@@ -79,8 +80,8 @@ const createTask = async ({ orgId, createdBy, title, description, priority, assi
     .insert({ org_id: orgId, project_id, created_by: createdBy, title, description, priority, assignee_id, due_date })
     .returning('*');
 
-  // Invalidate assignee's task cache
-  if (assignee_id) await cache.invalidateAssigneeCache(assignee_id);
+  // Invalidate all cached lists for this project (covers 'all-assignee' views too)
+  await cache.invalidateProjectCache(project_id);
 
   return task;
 };
@@ -103,9 +104,11 @@ const updateTask = async ({ taskId, orgId, userId, userRole, updates }) => {
 
   const [updated] = await db('tasks').where({ id: taskId }).update(updates).returning('*');
 
-  // Invalidate old + new assignee caches
-  await cache.invalidateAssigneeCache(task.assignee_id);
+  // Primary: wipe all project cache (covers ADMIN/MANAGER 'all' views)
+  await cache.invalidateProjectCache(task.project_id);
+  // Secondary: on reassign, also clear old/new assignee's cross-project keys
   if (updates.assignee_id && updates.assignee_id !== task.assignee_id) {
+    await cache.invalidateAssigneeCache(task.assignee_id);
     await cache.invalidateAssigneeCache(updates.assignee_id);
   }
 
@@ -139,7 +142,8 @@ const updateTaskStatus = async ({ taskId, orgId, userId, userRole, newStatus }) 
     .update({ status: newStatus, completed_at: completedAt })
     .returning('*');
 
-  await cache.invalidateAssigneeCache(task.assignee_id);
+  // Wipe all project cache so the board refreshes immediately for everyone
+  await cache.invalidateProjectCache(task.project_id);
   return updated;
 };
 
@@ -148,7 +152,7 @@ const deleteTask = async ({ taskId, orgId }) => {
   const task = await db('tasks').where({ id: taskId, org_id: orgId }).first();
   if (!task) throw new AppError('Task not found', 404, 'NOT_FOUND');
   await db('tasks').where({ id: taskId }).del();
-  await cache.invalidateAssigneeCache(task.assignee_id);
+  await cache.invalidateProjectCache(task.project_id);
 };
 
 module.exports = { listTasks, getTaskById, createTask, updateTask, updateTaskStatus, deleteTask };
