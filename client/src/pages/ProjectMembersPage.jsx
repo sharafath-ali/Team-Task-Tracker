@@ -11,6 +11,8 @@ import {
 import { listUsers } from "../api/users.api";
 import useAuthStore from "../store/authStore";
 import useProjectStore from "../store/projectStore";
+import { useToast } from "../context/ToastContext";
+
 
 export default function ProjectMembersPage() {
   const { user } = useAuthStore();
@@ -40,6 +42,8 @@ export default function ProjectMembersPage() {
     queryFn: () => listUsers({ limit: 100 }).then((r) => r.data.data),
   });
 
+  const toast = useToast();
+
   const addMut = useMutation({
     mutationFn: () => addProjectMember(selectedProject.id, addForm),
     onSuccess: () => {
@@ -49,9 +53,13 @@ export default function ProjectMembersPage() {
       qc.invalidateQueries({ queryKey: ["projects"] });
       setShowAdd(false);
       setAddForm({ user_id: "", project_role: "MEMBER" });
+      toast.success("Member added to project successfully!");
     },
-    onError: (err) =>
-      setError(err.response?.data?.message || "Failed to add member"),
+    onError: (err) => {
+      const errMsg = err.response?.data?.message || "Failed to add member";
+      setError(errMsg);
+      toast.error(errMsg);
+    },
   });
 
   const removeMut = useMutation({
@@ -61,17 +69,27 @@ export default function ProjectMembersPage() {
         queryKey: ["project-members", selectedProject.id],
       });
       qc.invalidateQueries({ queryKey: ["projects"] });
+      toast.success("Member removed from project.");
+    },
+    onError: (err) => {
+      toast.error(err.response?.data?.message || "Failed to remove member");
     },
   });
 
   const updateRoleMut = useMutation({
     mutationFn: ({ userId, project_role }) =>
       updateProjectMember(selectedProject.id, userId, { project_role }),
-    onSuccess: () =>
+    onSuccess: () => {
       qc.invalidateQueries({
         queryKey: ["project-members", selectedProject.id],
-      }),
+      });
+      toast.success("Project role updated.");
+    },
+    onError: (err) => {
+      toast.error(err.response?.data?.message || "Failed to update role");
+    },
   });
+
 
   const members = membersData || [];
   const allUsers = usersData?.users || [];

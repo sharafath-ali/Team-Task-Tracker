@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
@@ -23,6 +23,8 @@ import {
 } from "../api/tasks.api";
 import { listUsers } from "../api/users.api";
 import useAuthStore from "../store/authStore";
+import { useToast } from "../context/ToastContext";
+
 
 // ─── Constants ─────────────────────────────────────────────────────
 const STATUS_DISPLAY = {
@@ -82,10 +84,24 @@ export default function TaskDetailPage() {
   const { user } = useAuthStore();
   const qc = useQueryClient();
 
+  const toast = useToast();
   const [editMode, setEditMode] = useState(false);
   const [form, setForm] = useState(null);
   const [deleteConfirm, setDeleteConfirm] = useState(false);
   const [saveError, setSaveError] = useState("");
+  const [showAssigneePopover, setShowAssigneePopover] = useState(false);
+  const popoverRef = useRef(null);
+
+  // Close assignee popover when clicking outside
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (popoverRef.current && !popoverRef.current.contains(event.target)) {
+        setShowAssigneePopover(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   // Fetch task
   const {
@@ -129,17 +145,38 @@ export default function TaskDetailPage() {
       qc.invalidateQueries({ queryKey: ["tasks"] });
       setEditMode(false);
       setSaveError("");
+      toast.success("Task updated successfully!");
     },
-    onError: (err) =>
-      setSaveError(err.response?.data?.message || "Failed to save"),
+    onError: (err) => {
+      const errMsg = err.response?.data?.message || "Failed to save";
+      setSaveError(errMsg);
+      toast.error(errMsg);
+    },
   });
 
   // Status transition mutation
   const statusMut = useMutation({
     mutationFn: (status) => updateStatus(taskId, status),
+    onSuccess: (_, newStatus) => {
+      qc.invalidateQueries({ queryKey: ["task", taskId] });
+      qc.invalidateQueries({ queryKey: ["tasks"] });
+      toast.success(`Task status updated to "${STATUS_DISPLAY[newStatus]}"`);
+    },
+    onError: (err) => {
+      toast.error(err.response?.data?.message || "Failed to update task status");
+    },
+  });
+
+  // Inline assignee mutation (saves immediately, no edit mode)
+  const assigneeMut = useMutation({
+    mutationFn: (userId) => updateTask(taskId, { assignee_id: userId || null }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["task", taskId] });
       qc.invalidateQueries({ queryKey: ["tasks"] });
+      toast.success("Assignee updated successfully!");
+    },
+    onError: (err) => {
+      toast.error(err.response?.data?.message || "Failed to update assignee");
     },
   });
 
@@ -148,11 +185,16 @@ export default function TaskDetailPage() {
     mutationFn: () => deleteTask(taskId),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["tasks"] });
+      toast.success("Task deleted successfully.");
       navigate(-1);
     },
-    onError: (err) =>
-      setSaveError(err.response?.data?.message || "Failed to delete"),
+    onError: (err) => {
+      const errMsg = err.response?.data?.message || "Failed to delete";
+      setSaveError(errMsg);
+      toast.error(errMsg);
+    },
   });
+
 
   const set = (field) => (e) =>
     setForm((f) => ({ ...f, [field]: e.target.value }));
@@ -423,7 +465,7 @@ export default function TaskDetailPage() {
           </div>
 
           {/* Assignee */}
-          <div className="td-detail-row">
+          <div className="td-detail-row" style={{ position: "relative" }} ref={popoverRef}>
             <div className="td-detail-label">
               <User size={12} /> Assignee
             </div>
@@ -441,6 +483,64 @@ export default function TaskDetailPage() {
                   </option>
                 ))}
               </select>
+            ) : ["ADMIN", "MANAGER"].includes(user?.role) ? (
+              <div 
+                className="td-person-row td-person-clickable" 
+                onClick={() => setShowAssigneePopover(!showAssigneePopover)}
+                title="Click to assign"
+              >
+                {task.assignee_name ? (
+                  <>
+                    <div className="td-avatar">
+                      {task.assignee_name
+                        .split(" ")
+                        .map((n) => n[0])
+                        .join("")
+                        .toUpperCase()
+                        .slice(0, 2)}
+                    </div>
+                    <span className="td-detail-value td-clickable-text">
+                      {task.assignee_name}
+                    </span>
+                  </>
+                ) : (
+                  <span className="td-detail-value td-clickable-text td-muted">
+                    Unassigned
+                  </span>
+                )}
+                {/* Popover */}
+                {showAssigneePopover && (
+                  <div className="td-assignee-popover" onClick={(e) => e.stopPropagation()}>
+                    <div className="td-popover-header">Assign to:</div>
+                    <div className="td-popover-list">
+                      <div 
+                        className={`td-popover-item ${!task.assignee_id ? "selected" : ""}`}
+                        onClick={() => {
+                          assigneeMut.mutate(null);
+                          setShowAssigneePopover(false);
+                        }}
+                      >
+                        Unassigned
+                      </div>
+                      {allUsers.map((u) => (
+                        <div 
+                          key={u.id}
+                          className={`td-popover-item ${task.assignee_id === u.id ? "selected" : ""}`}
+                          onClick={() => {
+                            assigneeMut.mutate(u.id);
+                            setShowAssigneePopover(false);
+                          }}
+                        >
+                          <div className="td-avatar font-mini">
+                            {u.name.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2)}
+                          </div>
+                          <span>{u.name} ({u.role})</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
             ) : (
               <div className="td-person-row">
                 {task.assignee_name ? (
@@ -463,6 +563,7 @@ export default function TaskDetailPage() {
               </div>
             )}
           </div>
+
 
           {/* Due Date */}
           <div className="td-detail-row">

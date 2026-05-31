@@ -8,9 +8,12 @@ import {
   deactivateUser,
 } from "../api/users.api";
 import { listProjects, addProjectMember } from "../api/projects.api";
+import { useToast } from "../context/ToastContext";
 
 export default function UsersPage() {
   const qc = useQueryClient();
+  const toast = useToast();
+
   const [showCreate, setShowCreate] = useState(false);
   const [form, setForm] = useState({
     name: "",
@@ -50,26 +53,43 @@ export default function UsersPage() {
       }
       return newUser;
     },
-    onSuccess: () => {
+    onSuccess: (newUser) => {
       qc.invalidateQueries({ queryKey: ["users"] });
       qc.invalidateQueries({ queryKey: ["projects"] });
       setShowCreate(false);
       setForm({ name: "", email: "", password: "", role: "MEMBER" });
       setSelectedProjectIds([]);
+      toast.success(`User "${newUser.name}" invited successfully!`);
     },
-    onError: (err) =>
-      setError(err.response?.data?.message || "Failed to create user"),
+    onError: (err) => {
+      const errMsg = err.response?.data?.message || "Failed to create user";
+      setError(errMsg);
+      toast.error(errMsg);
+    },
   });
 
   const deactivateMut = useMutation({
     mutationFn: deactivateUser,
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["users"] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["users"] });
+      toast.success("User deactivated successfully.");
+    },
+    onError: (err) => {
+      toast.error(err.response?.data?.message || "Failed to deactivate user");
+    },
   });
 
   const updateRoleMut = useMutation({
     mutationFn: ({ id, role }) => updateUser(id, { role }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["users"] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["users"] });
+      toast.success("User role updated successfully.");
+    },
+    onError: (err) => {
+      toast.error(err.response?.data?.message || "Failed to update user role");
+    },
   });
+
 
   const users = data?.users || [];
   const projects = projData?.projects || [];

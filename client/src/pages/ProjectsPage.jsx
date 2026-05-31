@@ -13,6 +13,7 @@ import {
 import { listProjects, createProject } from "../api/projects.api";
 import useAuthStore from "../store/authStore";
 import useProjectStore from "../store/projectStore";
+import { useToast } from "../context/ToastContext";
 
 const ACCENT_COLORS = [
   "color-1",
@@ -39,6 +40,7 @@ export default function ProjectsPage() {
   const { selectedProject, setSelectedProject } = useProjectStore();
   const navigate = useNavigate();
   const qc = useQueryClient();
+  const toast = useToast();
 
   const [showCreate, setShowCreate] = useState(false);
   const [form, setForm] = useState({ name: "", description: "" });
@@ -57,11 +59,16 @@ export default function ProjectsPage() {
       setSelectedProject(proj);
       setShowCreate(false);
       setForm({ name: "", description: "" });
+      toast.success(`Project "${proj.name}" created successfully!`);
       navigate("/dashboard");
     },
-    onError: (err) =>
-      setError(err.response?.data?.message || "Failed to create project"),
+    onError: (err) => {
+      const errMsg = err.response?.data?.message || "Failed to create project";
+      setError(errMsg);
+      toast.error(errMsg);
+    },
   });
+
 
   const projects = data?.projects || [];
   const canCreate = ["ADMIN", "MANAGER"].includes(user?.role);

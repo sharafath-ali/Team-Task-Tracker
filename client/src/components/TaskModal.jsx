@@ -3,10 +3,12 @@ import { X } from "lucide-react";
 import { createTask } from "../api/tasks.api";
 import useAuthStore from "../store/authStore";
 import useProjectStore from "../store/projectStore";
+import { useToast } from "../context/ToastContext";
 
 export default function TaskModal({ users = [], onClose, onSaved }) {
   const { user } = useAuthStore();
   const { selectedProject } = useProjectStore();
+  const toast = useToast();
 
   const [form, setForm] = useState({
     title: "",
@@ -39,13 +41,17 @@ export default function TaskModal({ users = [], onClose, onSaved }) {
         assignee_id: form.assignee_id || null,
         due_date: form.due_date || null,
       });
+      toast.success(`Task "${form.title}" created successfully!`);
       onSaved();
     } catch (err) {
-      setError(err.response?.data?.message || "Failed to create task");
+      const errMsg = err.response?.data?.message || "Failed to create task";
+      setError(errMsg);
+      toast.error(errMsg);
     } finally {
       setLoading(false);
     }
   };
+
 
   return (
     <div

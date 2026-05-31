@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { login as loginApi } from "../api/auth.api";
 import useAuthStore from "../store/authStore";
+import { useToast } from "../context/ToastContext";
 
 export default function LoginPage() {
   const [form, setForm] = useState({ email: "", password: "" });
@@ -9,6 +10,7 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const { setAuth } = useAuthStore();
   const navigate = useNavigate();
+  const toast = useToast();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -17,16 +19,17 @@ export default function LoginPage() {
     try {
       const { data } = await loginApi(form);
       setAuth(data.data.user, data.data.accessToken, data.data.refreshToken);
+      toast.success(`Welcome back, ${data.data.user.name}!`);
       navigate("/");
     } catch (err) {
-      setError(
-        err.response?.data?.message ||
-          "Login failed. Please check your credentials.",
-      );
+      const errMsg = err.response?.data?.message || "Login failed. Please check your credentials.";
+      setError(errMsg);
+      toast.error(errMsg);
     } finally {
       setLoading(false);
     }
   };
+
 
   return (
     <div className="auth-page">

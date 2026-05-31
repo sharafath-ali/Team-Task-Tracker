@@ -7,6 +7,8 @@ import { listUsers } from "../api/users.api";
 import useAuthStore from "../store/authStore";
 import useProjectStore from "../store/projectStore";
 import TaskModal from "../components/TaskModal";
+import { useToast } from "../context/ToastContext";
+
 
 const COLUMNS = [
   { key: "TODO", label: "To Do", color: "var(--status-todo)" },
@@ -33,6 +35,7 @@ export default function BoardPage() {
   const { selectedProject } = useProjectStore();
   const navigate = useNavigate();
   const qc = useQueryClient();
+  const toast = useToast();
 
   const [filters, setFilters] = useState({ priority: "" });
   const [showCreate, setShowCreate] = useState(false);
@@ -64,8 +67,17 @@ export default function BoardPage() {
 
   const statusMut = useMutation({
     mutationFn: ({ id, status }) => updateStatus(id, status),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["tasks"] }),
+    onSuccess: (_, variables) => {
+      qc.invalidateQueries({ queryKey: ["tasks"] });
+      // Format the status key for displaying (e.g. IN_PROGRESS -> In Progress)
+      const label = COLUMNS.find((c) => c.key === variables.status)?.label || variables.status;
+      toast.success(`Task status updated to "${label}"`);
+    },
+    onError: (err) => {
+      toast.error(err.response?.data?.message || "Failed to update task status");
+    },
   });
+
 
   const tasks = data?.tasks || [];
   const allUsers = usersData?.users || [];

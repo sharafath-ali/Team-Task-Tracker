@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { register as registerApi } from "../api/auth.api";
 import useAuthStore from "../store/authStore";
+import { useToast } from "../context/ToastContext";
 
 export default function RegisterPage() {
   const [form, setForm] = useState({
@@ -14,6 +15,7 @@ export default function RegisterPage() {
   const [loading, setLoading] = useState(false);
   const { setAuth } = useAuthStore();
   const navigate = useNavigate();
+  const toast = useToast();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -21,6 +23,7 @@ export default function RegisterPage() {
     setLoading(true);
     try {
       await registerApi(form);
+      toast.success("Workspace created successfully!");
       // Auto-login after register
       const { login } = await import("../api/auth.api");
       const { data } = await login({
@@ -28,15 +31,17 @@ export default function RegisterPage() {
         password: form.password,
       });
       setAuth(data.data.user, data.data.accessToken, data.data.refreshToken);
+      toast.success(`Logged in as Admin: ${data.data.user.name}`);
       navigate("/");
     } catch (err) {
-      setError(
-        err.response?.data?.message || "Registration failed. Please try again.",
-      );
+      const errMsg = err.response?.data?.message || "Registration failed. Please try again.";
+      setError(errMsg);
+      toast.error(errMsg);
     } finally {
       setLoading(false);
     }
   };
+
 
   const set = (field) => (e) =>
     setForm((f) => ({ ...f, [field]: e.target.value }));
