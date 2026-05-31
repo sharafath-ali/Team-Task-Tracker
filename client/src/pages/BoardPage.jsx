@@ -1,7 +1,17 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
-import { Plus, Filter, AlertTriangle, Layers, ArrowRight } from "lucide-react";
+import {
+  Plus,
+  Filter,
+  AlertTriangle,
+  Layers,
+  ArrowRight,
+  ChevronLeft,
+  ChevronRight,
+  ChevronsLeft,
+  ChevronsRight,
+} from "lucide-react";
 import { listTasks, updateStatus } from "../api/tasks.api";
 import { listUsers } from "../api/users.api";
 import useAuthStore from "../store/authStore";
@@ -30,6 +40,30 @@ const TRANSITIONS = {
   DONE: [],
 };
 
+function getPageNumbers(current, total) {
+  const pages = [];
+  if (total <= 7) {
+    for (let i = 1; i <= total; i++) {
+      pages.push(i);
+    }
+  } else {
+    pages.push(1);
+    if (current > 3) {
+      pages.push("...");
+    }
+    const start = Math.max(2, current - 1);
+    const end = Math.min(total - 1, current + 1);
+    for (let i = start; i <= end; i++) {
+      if (!pages.includes(i)) pages.push(i);
+    }
+    if (current < total - 2) {
+      pages.push("...");
+    }
+    if (!pages.includes(total)) pages.push(total);
+  }
+  return pages;
+}
+
 export default function BoardPage() {
   const { user } = useAuthStore();
   const { selectedProject } = useProjectStore();
@@ -39,9 +73,16 @@ export default function BoardPage() {
 
   const [filters, setFilters] = useState({ priority: "" });
   const [showCreate, setShowCreate] = useState(false);
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(20);
+
+  // Reset page when project or filters change
+  useEffect(() => {
+    setPage(1);
+  }, [selectedProject?.id, filters]);
 
   // Scope tasks to the selected project
-  const taskQueryKey = ["tasks", selectedProject?.id, filters];
+  const taskQueryKey = ["tasks", selectedProject?.id, filters, page, limit];
   const { data, isLoading } = useQuery({
     queryKey: taskQueryKey,
     enabled: !!selectedProject,
@@ -53,7 +94,8 @@ export default function BoardPage() {
       return listTasks({
         project_id: selectedProject.id,
         ...cleanFilters,
-        limit: 100,
+        page,
+        limit,
       }).then((r) => r.data.data);
     },
   });
@@ -81,13 +123,14 @@ export default function BoardPage() {
 
   const tasks = data?.tasks || [];
   const allUsers = usersData?.users || [];
+  const pagination = data?.pagination || { page: 1, limit: 20, total: 0, totalPages: 1 };
 
   const tasksByStatus = COLUMNS.reduce((acc, col) => {
     acc[col.key] = tasks.filter((t) => t.status === col.key);
     return acc;
   }, {});
 
-  const total = tasks.length;
+  const total = pagination.total || 0;
   const done = tasks.filter((t) => t.status === "DONE").length;
   const overdue = tasks.filter(
     (t) =>
@@ -238,42 +281,126 @@ export default function BoardPage() {
             <div className="spinner" />
           </div>
         ) : (
-          <div className="kanban-board">
-            {COLUMNS.map((col) => (
-              <div key={col.key} className={`kanban-column col-${col.key}`}>
-                <div className="kanban-header">
-                  <div className="kanban-title">
-                    <span className="kanban-dot" />
-                    {col.label}
+          <>
+            <div className="kanban-board">
+              {COLUMNS.map((col) => (
+                <div key={col.key} className={`kanban-column col-${col.key}`}>
+                  <div className="kanban-header">
+                    <div className="kanban-title">
+                      <span className="kanban-dot" />
+                      {col.label}
+                    </div>
+                    <span className="kanban-count">
+                      {tasksByStatus[col.key]?.length || 0}
+                    </span>
                   </div>
-                  <span className="kanban-count">
-                    {tasksByStatus[col.key]?.length || 0}
-                  </span>
+
+                  {tasksByStatus[col.key]?.length === 0 ? (
+                    <div className="empty-column">
+                      <div className="empty-column-icon">○</div>
+                      No tasks
+                    </div>
+                  ) : (
+                    tasksByStatus[col.key].map((task) => (
+                      <TaskCard
+                        key={task.id}
+                        task={task}
+                        userRole={user?.role}
+                        userId={user?.id}
+                        transitions={TRANSITIONS[task.status] || []}
+                        onStatusChange={(status) =>
+                          statusMut.mutate({ id: task.id, status })
+                        }
+                        onClick={() => navigate(`/dashboard/tasks/${task.id}`)}
+                      />
+                    ))
+                  )}
+                </div>
+              ))}
+            </div>
+
+            {/* Pagination Controls */}
+            {total > 0 && (
+              <div className="board-pagination">
+                <div className="pagination-info">
+                  Showing <span className="pagination-bold">{Math.min((page - 1) * limit + 1, total)}</span>–
+                  <span className="pagination-bold">{Math.min(page * limit, total)}</span> of{" "}
+                  <span className="pagination-bold">{total}</span> tasks
                 </div>
 
-                {tasksByStatus[col.key]?.length === 0 ? (
-                  <div className="empty-column">
-                    <div className="empty-column-icon">○</div>
-                    No tasks
+                <div className="pagination-controls">
+                  <button
+                    className="pagination-btn"
+                    onClick={() => setPage(1)}
+                    disabled={page === 1}
+                    title="First Page"
+                  >
+                    <ChevronsLeft size={14} />
+                  </button>
+                  <button
+                    className="pagination-btn"
+                    onClick={() => setPage((p) => Math.max(p - 1, 1))}
+                    disabled={page === 1}
+                    title="Previous Page"
+                  >
+                    <ChevronLeft size={14} />
+                  </button>
+
+                  <div className="pagination-pages">
+                    {getPageNumbers(page, pagination.totalPages).map((p, idx) =>
+                      p === "..." ? (
+                        <span key={`ellipsis-${idx}`} className="pagination-ellipsis">
+                          ...
+                        </span>
+                      ) : (
+                        <button
+                          key={`page-${p}`}
+                          className={`pagination-btn page-num-btn${page === p ? " active" : ""}`}
+                          onClick={() => setPage(p)}
+                        >
+                          {p}
+                        </button>
+                      )
+                    )}
                   </div>
-                ) : (
-                  tasksByStatus[col.key].map((task) => (
-                    <TaskCard
-                      key={task.id}
-                      task={task}
-                      userRole={user?.role}
-                      userId={user?.id}
-                      transitions={TRANSITIONS[task.status] || []}
-                      onStatusChange={(status) =>
-                        statusMut.mutate({ id: task.id, status })
-                      }
-                      onClick={() => navigate(`/dashboard/tasks/${task.id}`)}
-                    />
-                  ))
-                )}
+
+                  <button
+                    className="pagination-btn"
+                    onClick={() => setPage((p) => Math.min(p + 1, pagination.totalPages))}
+                    disabled={page === pagination.totalPages}
+                    title="Next Page"
+                  >
+                    <ChevronRight size={14} />
+                  </button>
+                  <button
+                    className="pagination-btn"
+                    onClick={() => setPage(pagination.totalPages)}
+                    disabled={page === pagination.totalPages}
+                    title="Last Page"
+                  >
+                    <ChevronsRight size={14} />
+                  </button>
+                </div>
+
+                <div className="pagination-size">
+                  <span className="pagination-size-label">Per page:</span>
+                  <select
+                    className="form-select pagination-select"
+                    value={limit}
+                    onChange={(e) => {
+                      setLimit(Number(e.target.value));
+                      setPage(1);
+                    }}
+                  >
+                    <option value={10}>10</option>
+                    <option value={20}>20</option>
+                    <option value={50}>50</option>
+                    <option value={100}>100</option>
+                  </select>
+                </div>
               </div>
-            ))}
-          </div>
+            )}
+          </>
         )}
       </div>
 
