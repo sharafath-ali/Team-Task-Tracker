@@ -46,10 +46,7 @@ That's it. Docker Compose will:
 5. Expose **pgAdmin** at `http://localhost:5050` (email: `admin@tasktracker.com` / pw: `admin`)
 6. Expose **RedisInsight** at `http://localhost:8001`
 
-> **Frontend (optional):** The React client runs via a Docker Compose profile to keep the default startup lean.
-> ```bash
-> docker compose --profile frontend up
-> ```
+> **Frontend:** The React client starts alongside all other services automatically.
 > Frontend available at `http://localhost:3000`
 
 ### 3. Seed demo data (optional)
@@ -168,35 +165,57 @@ The API uses **JWT with refresh token rotation**:
 
 ### What is cached
 
-Task list responses are cached in Redis using a **cache-aside (lazy loading)** pattern.
+Task list responses are cached in Redis using a **cache-aside (lazy loading)** pattern. Only the `GET /tasks` list endpoint is cached — individual task fetches (`GET /tasks/:id`) hit the database directly.
 
-**Cache key format:**
+### Cache key format
+
 ```
-cache:tasks:assignee:{assigneeId}:page:{page}:limit:{limit}:status:{status}:priority:{priority}
+cache:tasks:project:{projectId}:assignee:{assigneeId}:page:{page}:limit:{limit}:status:{status}:priority:{priority}
 ```
 
-- When a MEMBER queries their tasks, `assigneeId` is forced to their own user ID.
-- ADMIN/MANAGER queries with no assignee filter use `all` as the assignee segment.
-- Each unique combination of filters gets its own cache entry.
-- **TTL:** 5 minutes (configurable via `CACHE_TTL_SECONDS` env var).
+Each unique combination of query parameters gets its own cache entry:
+
+| Segment | Value |
+|---------|-------|
+| `projectId` | Project UUID, or `all` if not filtered |
+| `assigneeId` | Assignee UUID, or `all` for ADMIN/MANAGER unfiltered views — always forced to the requesting user's ID for MEMBER role |
+| `page` / `limit` | Pagination parameters |
+| `status` / `priority` | Filter values, or `all` if not provided |
+
+**TTL:** 5 minutes (configurable via `CACHE_TTL_SECONDS` env var)
+
+### Cache-aside flow
+
+```
+GET /tasks
+  │
+  ├─ Build cache key from request params
+  ├─ Redis GET → HIT  → return cached result immediately
+  └─ Redis GET → MISS → query PostgreSQL → SET in Redis with TTL → return result
+```
 
 ### Invalidation strategy
 
-Cache invalidation happens on every **write operation**:
+Cache is invalidated on every **write operation** by deleting all keys matching a pattern via Redis `SCAN`:
 
-| Event                       | Keys invalidated                                         |
-|-----------------------------|----------------------------------------------------------|
-| Task created                | All keys for `assignee:{assignee_id}:*`                  |
-| Task updated (same assignee)| All keys for `assignee:{assignee_id}:*`                  |
-| Task reassigned             | All keys for both old AND new assignee                   |
-| Task status changed         | All keys for `assignee:{task.assignee_id}:*`             |
-| Task deleted                | All keys for `assignee:{task.assignee_id}:*`             |
+| Event | Keys invalidated | Pattern |
+|-------|-----------------|----------|
+| Task **created** | All cached lists for that project | `cache:tasks:project:{projectId}:*` |
+| Task **updated** (fields) | All cached lists for that project | `cache:tasks:project:{projectId}:*` |
+| Task **status changed** | All cached lists for that project | `cache:tasks:project:{projectId}:*` |
+| Task **deleted** | All cached lists for that project | `cache:tasks:project:{projectId}:*` |
+| Task **reassigned** (extra) | Also clears cross-project keys for old AND new assignee | `cache:tasks:project:*:assignee:{userId}:*` |
 
-**Implementation:** Uses Redis `SCAN` (not `KEYS`) to delete pattern-matched keys without blocking the event loop. This is safe under large keyspaces and avoids the O(N) blocking `KEYS` command.
+**Why project-scoped invalidation?** Wiping all cache entries for a project on any mutation ensures that ADMIN/MANAGER "all-assignee" views and individual MEMBER views are always refreshed consistently. A narrower per-assignee invalidation would leave stale ADMIN views after any write.
+
+**Implementation:** Uses Redis `SCAN` with `COUNT 100` in a cursor loop (not `KEYS`) so key deletion is non-blocking and safe under large keyspaces. The `KEYS` command blocks the Redis event loop for the full scan — `SCAN` does not.
 
 ### Why cache-aside over write-through?
 
-Write-through caching would require updating the cache on every write, which means reconstructing the full paginated result on every task mutation. Since task lists are parameterised (page, limit, status, priority, assignee), it's impractical to keep all variants consistent on write. Cache-aside is simpler and correct — stale data can only exist for the TTL window, and writes immediately invalidate the relevant entries.
+Write-through caching would require reconstructing the full paginated task list on every mutation. Since lists are parameterised across 6 dimensions (project, assignee, page, limit, status, priority), maintaining all cache variants on write is impractical. Cache-aside is simpler and correct:
+- Reads populate the cache lazily on first access
+- Writes immediately invalidate the affected project's keys
+- Stale data can only exist within the TTL window (5 minutes), and all writes eagerly clear it
 
 ---
 
