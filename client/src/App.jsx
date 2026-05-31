@@ -4,6 +4,7 @@ import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
 import ProjectsPage from "./pages/ProjectsPage";
 import BoardPage from "./pages/BoardPage";
+import TaskDetailPage from "./pages/TaskDetailPage";
 import UsersPage from "./pages/UsersPage";
 import ProjectMembersPage from "./pages/ProjectMembersPage";
 import Layout from "./components/Layout";
@@ -43,6 +44,9 @@ export default function App() {
         {/* ── WORKSPACE ─────────────────────────────── */}
         {/* Dashboard: task board scoped to selected project */}
         <Route path="dashboard" element={<BoardPage />} />
+
+        {/* Task detail page */}
+        <Route path="dashboard/tasks/:taskId" element={<TaskDetailPage />} />
 
         {/* Dashboard sub-section: project members */}
         <Route path="dashboard/members" element={<ProjectMembersPage />} />

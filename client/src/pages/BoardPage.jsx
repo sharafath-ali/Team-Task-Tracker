@@ -35,7 +35,6 @@ export default function BoardPage() {
   const qc = useQueryClient();
 
   const [filters, setFilters] = useState({ priority: "" });
-  const [selectedTask, setSelectedTask] = useState(null);
   const [showCreate, setShowCreate] = useState(false);
 
   // Scope tasks to the selected project
@@ -256,7 +255,7 @@ export default function BoardPage() {
                       onStatusChange={(status) =>
                         statusMut.mutate({ id: task.id, status })
                       }
-                      onClick={() => setSelectedTask(task)}
+                      onClick={() => navigate(`/dashboard/tasks/${task.id}`)}
                     />
                   ))
                 )}
@@ -265,19 +264,6 @@ export default function BoardPage() {
           </div>
         )}
       </div>
-
-      {/* Task Modal — view/edit */}
-      {selectedTask && (
-        <TaskModal
-          task={selectedTask}
-          users={allUsers}
-          onClose={() => setSelectedTask(null)}
-          onSaved={() => {
-            qc.invalidateQueries({ queryKey: ["tasks"] });
-            setSelectedTask(null);
-          }}
-        />
-      )}
 
       {/* Create Task Modal */}
       {showCreate && (
