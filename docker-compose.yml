@@ -130,6 +130,7 @@ services:
     restart: unless-stopped
     environment:
       VITE_API_URL: http://localhost:5000
+      VITE_PROXY_TARGET: http://server:5000
     ports:
       - '3000:3000'
     networks:
