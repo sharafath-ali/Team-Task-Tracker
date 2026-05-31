@@ -15,6 +15,22 @@ export default function LoginPage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
+
+    // Client-side validation: display inline in UI only
+    if (!form.email.trim()) {
+      setError("Email address is required.");
+      return;
+    }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(form.email)) {
+      setError("Please enter a valid email address.");
+      return;
+    }
+    if (!form.password) {
+      setError("Password is required.");
+      return;
+    }
+
     setLoading(true);
     try {
       const { data } = await loginApi(form);
@@ -23,12 +39,13 @@ export default function LoginPage() {
       navigate("/");
     } catch (err) {
       const errMsg = err.response?.data?.message || "Login failed. Please check your credentials.";
-      setError(errMsg);
+      // Network/Server error: show only in toaster
       toast.error(errMsg);
     } finally {
       setLoading(false);
     }
   };
+
 
 
   return (
