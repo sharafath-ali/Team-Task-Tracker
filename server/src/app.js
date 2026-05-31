@@ -6,7 +6,7 @@ const morgan = require("morgan");
 const rateLimit = require("express-rate-limit");
 
 const logger = require("./utils/logger");
-const errorMiddleware = require("./middleware/error.middleware");
+const { errorMiddleware } = require("./middleware/error.middleware");
 const { setupSwagger } = require("./swagger");
 
 // Route modules
