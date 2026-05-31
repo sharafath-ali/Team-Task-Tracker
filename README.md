@@ -204,57 +204,18 @@ Write-through caching would require updating the cache on every write, which mea
 
 ### Schema
 
-```
-organizations
-  id (uuid PK)
-  name (unique)
-  created_at, updated_at
+> 📊 **[View full schema diagram with ERD → `schema_diagram.md`](./schema_diagram.md)**
 
-users
-  id (uuid PK)
-  org_id (FK → organizations)
-  email (unique)
-  password_hash
-  name
-  role  ENUM(ADMIN, MANAGER, MEMBER)
-  is_active
-  created_at, updated_at
+The database has 6 tables scoped under an `organizations` root tenant:
 
-refresh_tokens
-  id (uuid PK)
-  user_id (FK → users)
-  token (unique, hashed)
-  expires_at
-  revoked_at
-  created_at
-
-projects
-  id (uuid PK)
-  org_id (FK → organizations)
-  name
-  description
-  created_by (FK → users)
-  created_at, updated_at
-
-project_members
-  project_id (FK → projects)
-  user_id (FK → users)
-  PRIMARY KEY (project_id, user_id)
-
-tasks
-  id (uuid PK)
-  org_id (FK → organizations)
-  project_id (FK → projects)
-  created_by (FK → users)
-  assignee_id (FK → users, nullable)
-  title
-  description
-  priority  ENUM(LOW, MEDIUM, HIGH)
-  status    ENUM(TODO, IN_PROGRESS, IN_REVIEW, DONE, BLOCKED)
-  due_date
-  completed_at  (set when status → DONE, used for analytics)
-  created_at, updated_at
-```
+| Table | Purpose |
+|-------|---------|
+| `organizations` | Root tenant — all data scoped under one org |
+| `users` | Members with `ADMIN` / `MANAGER` / `MEMBER` role ENUM |
+| `refresh_tokens` | Hashed JWT refresh tokens with revocation support |
+| `projects` | Projects per org, created by a user |
+| `project_members` | Many-to-many join (users ↔ projects) with `OWNER`/`MEMBER` per-project roles |
+| `tasks` | Tasks with `priority` and `status` ENUMs, assignee, due date, completion timestamp |
 
 ### Indexes
 
