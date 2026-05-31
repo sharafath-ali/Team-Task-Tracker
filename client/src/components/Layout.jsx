@@ -27,6 +27,7 @@ export default function Layout() {
 
   const [switcherOpen, setSwitcherOpen] = useState(false);
   const [search, setSearch] = useState("");
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const switcherRef = useRef(null);
 
   // Close switcher on outside click
@@ -40,6 +41,11 @@ export default function Layout() {
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
   }, []);
+
+  // Close sidebar on route change (mobile)
+  useEffect(() => {
+    setSidebarOpen(false);
+  }, [location.pathname]);
 
   const { data: projData } = useQuery({
     queryKey: ["projects"],
@@ -83,7 +89,44 @@ export default function Layout() {
 
   return (
     <div className="app-layout">
-      <aside className="sidebar">
+      {/* Mobile top bar */}
+      <div className="mobile-topbar">
+        <button
+          className="mobile-menu-btn"
+          onClick={() => setSidebarOpen(true)}
+          aria-label="Open menu"
+          id="mobile-menu-btn"
+        >
+          <span />
+          <span />
+          <span />
+        </button>
+        <div className="mobile-topbar-logo">
+          <div className="sidebar-logo-icon">✓</div>
+          <span className="sidebar-logo-text">TaskTracker</span>
+        </div>
+      </div>
+
+      {/* Overlay backdrop (mobile) */}
+      {sidebarOpen && (
+        <div
+          className="sidebar-overlay"
+          onClick={() => setSidebarOpen(false)}
+          aria-hidden="true"
+        />
+      )}
+
+      <aside className={`sidebar${sidebarOpen ? " sidebar--open" : ""}`}>
+        {/* Close button (mobile only) */}
+        <button
+          className="sidebar-close-btn"
+          onClick={() => setSidebarOpen(false)}
+          aria-label="Close menu"
+          id="sidebar-close-btn"
+        >
+          ✕
+        </button>
+
         {/* Logo */}
         <div className="sidebar-logo">
           <div className="sidebar-logo-icon">✓</div>
