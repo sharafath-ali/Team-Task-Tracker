@@ -1,31 +1,32 @@
 import { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
 import { createTask, updateTask } from '../api/tasks.api';
-import { listUsers } from '../api/users.api';
 import useAuthStore from '../store/authStore';
+import useProjectStore from '../store/projectStore';
 
-export default function TaskModal({ task, projects, onClose, onSaved }) {
+export default function TaskModal({ task, users = [], onClose, onSaved }) {
   const { user } = useAuthStore();
+  const { selectedProject } = useProjectStore();
   const isEdit = !!task;
+
   const [form, setForm] = useState({
     title:       task?.title       || '',
     description: task?.description || '',
     priority:    task?.priority    || 'MEDIUM',
     assignee_id: task?.assignee_id || '',
-    project_id:  task?.project_id  || (projects[0]?.id || ''),
+    project_id:  task?.project_id  || selectedProject?.id || '',
     due_date:    task?.due_date    ? task.due_date.split('T')[0] : '',
   });
-  const [members, setMembers] = useState([]);
-  const [error, setError]     = useState('');
+
+  const [error, setError]   = useState('');
   const [loading, setLoading] = useState(false);
 
+  // Keep project_id in sync with store selection when creating
   useEffect(() => {
-    if (['ADMIN', 'MANAGER'].includes(user?.role)) {
-      listUsers({ limit: 100 })
-        .then(r => setMembers(r.data.data.users || []))
-        .catch(() => {});
+    if (!isEdit && selectedProject?.id) {
+      setForm(f => ({ ...f, project_id: selectedProject.id }));
     }
-  }, [user]);
+  }, [selectedProject, isEdit]);
 
   const set = (field) => (e) => setForm(f => ({ ...f, [field]: e.target.value }));
 
@@ -61,6 +62,10 @@ export default function TaskModal({ task, projects, onClose, onSaved }) {
     BLOCKED:     'Blocked',
   };
 
+  const projectDisplayName = isEdit
+    ? (task.project_name || 'Unknown project')
+    : (selectedProject?.name || 'No project');
+
   return (
     <div
       className="modal-overlay"
@@ -70,35 +75,28 @@ export default function TaskModal({ task, projects, onClose, onSaved }) {
         {/* Header */}
         <div className="modal-header">
           <h2 className="modal-title">{isEdit ? 'Edit Task' : 'Create Task'}</h2>
-          <button
-            className="btn btn-ghost btn-icon"
-            onClick={onClose}
-            aria-label="Close"
-          >
+          <button className="btn btn-ghost btn-icon" onClick={onClose} aria-label="Close">
             <X size={16} />
           </button>
         </div>
 
-        {/* Task metadata chips (edit mode) */}
-        {isEdit && (
-          <div className="modal-meta-row">
-            {task.project_name && (
-              <span className="modal-meta-chip">
-                Project: <strong>{task.project_name}</strong>
-              </span>
-            )}
-            {task.creator_name && (
-              <span className="modal-meta-chip">
-                Created by: <strong>{task.creator_name}</strong>
-              </span>
-            )}
-            {task.status && (
-              <span className="modal-meta-chip">
-                Status: <strong>{STATUS_DISPLAY[task.status] || task.status}</strong>
-              </span>
-            )}
-          </div>
-        )}
+        {/* Task meta chips */}
+        <div className="modal-meta-row">
+          {/* Project — always shown as read-only chip */}
+          <span className="modal-meta-chip">
+            Project: <strong>{projectDisplayName}</strong>
+          </span>
+          {isEdit && task.creator_name && (
+            <span className="modal-meta-chip">
+              Created by: <strong>{task.creator_name}</strong>
+            </span>
+          )}
+          {isEdit && task.status && (
+            <span className="modal-meta-chip">
+              Status: <strong>{STATUS_DISPLAY[task.status] || task.status}</strong>
+            </span>
+          )}
+        </div>
 
         {error && <div className="alert alert-error">{error}</div>}
 
@@ -156,23 +154,6 @@ export default function TaskModal({ task, projects, onClose, onSaved }) {
             </div>
           </div>
 
-          {!isEdit && (
-            <div className="form-group">
-              <label className="form-label" htmlFor="task-project">Project *</label>
-              <select
-                id="task-project"
-                className="form-select"
-                value={form.project_id}
-                onChange={set('project_id')}
-                required
-              >
-                {projects.map(p => (
-                  <option key={p.id} value={p.id}>{p.name}</option>
-                ))}
-              </select>
-            </div>
-          )}
-
           {['ADMIN', 'MANAGER'].includes(user?.role) && (
             <div className="form-group">
               <label className="form-label" htmlFor="task-assignee">Assignee</label>
@@ -183,7 +164,7 @@ export default function TaskModal({ task, projects, onClose, onSaved }) {
                 onChange={set('assignee_id')}
               >
                 <option value="">Unassigned</option>
-                {members.map(m => (
+                {users.map(m => (
                   <option key={m.id} value={m.id}>
                     {m.name} ({m.role})
                   </option>
@@ -193,11 +174,7 @@ export default function TaskModal({ task, projects, onClose, onSaved }) {
           )}
 
           <div className="modal-footer">
-            <button
-              type="button"
-              className="btn btn-secondary"
-              onClick={onClose}
-            >
+            <button type="button" className="btn btn-secondary" onClick={onClose}>
               Cancel
             </button>
             {canEdit && (

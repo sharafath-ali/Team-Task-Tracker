@@ -1,12 +1,14 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { UserPlus, X } from 'lucide-react';
+import { UserPlus, X, FolderOpen } from 'lucide-react';
 import { listUsers, createUser, updateUser, deactivateUser } from '../api/users.api';
+import { listProjects, addProjectMember } from '../api/projects.api';
 
 export default function UsersPage() {
   const qc = useQueryClient();
   const [showCreate, setShowCreate] = useState(false);
   const [form, setForm] = useState({ name: '', email: '', password: '', role: 'MEMBER' });
+  const [selectedProjectIds, setSelectedProjectIds] = useState([]);
   const [error, setError] = useState('');
 
   const { data, isLoading } = useQuery({
@@ -14,12 +16,33 @@ export default function UsersPage() {
     queryFn: () => listUsers({ limit: 100 }).then(r => r.data.data),
   });
 
+  const { data: projData } = useQuery({
+    queryKey: ['projects'],
+    queryFn: () => listProjects({ limit: 100 }).then(r => r.data.data),
+  });
+
   const createMut = useMutation({
-    mutationFn: createUser,
+    mutationFn: async (formData) => {
+      // 1. Create the user
+      const res = await createUser(formData);
+      const newUser = res.data.data.user;
+
+      // 2. Add to selected projects
+      for (const projId of selectedProjectIds) {
+        try {
+          await addProjectMember(projId, { user_id: newUser.id, project_role: 'MEMBER' });
+        } catch {
+          // Don't fail the whole flow if one project assignment fails
+        }
+      }
+      return newUser;
+    },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['users'] });
+      qc.invalidateQueries({ queryKey: ['projects'] });
       setShowCreate(false);
       setForm({ name: '', email: '', password: '', role: 'MEMBER' });
+      setSelectedProjectIds([]);
     },
     onError: (err) => setError(err.response?.data?.message || 'Failed to create user'),
   });
@@ -34,7 +57,14 @@ export default function UsersPage() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ['users'] }),
   });
 
-  const users = data?.users || [];
+  const users    = data?.users    || [];
+  const projects = projData?.projects || [];
+
+  const toggleProject = (projId) => {
+    setSelectedProjectIds(ids =>
+      ids.includes(projId) ? ids.filter(i => i !== projId) : [...ids, projId]
+    );
+  };
 
   const getInitials = (name) =>
     name?.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) || '??';
@@ -61,9 +91,7 @@ export default function UsersPage() {
 
       <div className="page-body">
         {isLoading ? (
-          <div className="loading-center">
-            <div className="spinner" />
-          </div>
+          <div className="loading-center"><div className="spinner" /></div>
         ) : (
           <div className="table-container">
             <div className="table-wrapper">
@@ -150,7 +178,7 @@ export default function UsersPage() {
           className="modal-overlay"
           onClick={e => e.target === e.currentTarget && setShowCreate(false)}
         >
-          <div className="modal" style={{ maxWidth: 440 }}>
+          <div className="modal" style={{ maxWidth: 480 }}>
             <div className="modal-header">
               <h2 className="modal-title">Invite User</h2>
               <button
@@ -202,7 +230,7 @@ export default function UsersPage() {
                 />
               </div>
               <div className="form-group">
-                <label className="form-label" htmlFor="invite-role">Role</label>
+                <label className="form-label" htmlFor="invite-role">Org Role</label>
                 <select
                   id="invite-role"
                   className="form-select"
@@ -214,6 +242,41 @@ export default function UsersPage() {
                   <option value="ADMIN">Admin</option>
                 </select>
               </div>
+
+              {/* Project Assignment */}
+              {projects.length > 0 && (
+                <div className="form-group">
+                  <label className="form-label">
+                    <FolderOpen size={12} style={{ display: 'inline', verticalAlign: 'middle', marginRight: 5 }} />
+                    Assign to Projects
+                    {selectedProjectIds.length > 0 && (
+                      <span style={{ marginLeft: 6, color: 'var(--primary)', fontWeight: 700 }}>
+                        ({selectedProjectIds.length} selected)
+                      </span>
+                    )}
+                  </label>
+                  <div className="project-assign-list">
+                    {projects.map(p => (
+                      <label
+                        key={p.id}
+                        className="project-assign-item"
+                        htmlFor={`assign-proj-${p.id}`}
+                      >
+                        <input
+                          type="checkbox"
+                          id={`assign-proj-${p.id}`}
+                          checked={selectedProjectIds.includes(p.id)}
+                          onChange={() => toggleProject(p.id)}
+                        />
+                        <span className="project-assign-name">{p.name}</span>
+                      </label>
+                    ))}
+                  </div>
+                  <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: 5 }}>
+                    User will be added as a Member to selected projects.
+                  </p>
+                </div>
+              )}
 
               <div className="modal-footer">
                 <button

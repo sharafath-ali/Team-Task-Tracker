@@ -5,8 +5,9 @@ const { authorize } = require('../../middleware/rbac.middleware');
 const { validate } = require('../../middleware/validate.middleware');
 const { createUserSchema, updateUserSchema, listUsersSchema } = require('./users.validation');
 
-// All users routes require authentication AND ADMIN role
-router.use(authenticate, authorize('ADMIN'));
+// GET /users is accessible to ADMIN and MANAGER (needed for member dropdowns)
+// All mutating routes remain ADMIN-only (enforced per-route below)
+router.use(authenticate);
 
 /**
  * @swagger
@@ -46,7 +47,7 @@ router.get('/', validate(listUsersSchema, 'query'), controller.list);
  *     summary: Create/invite a user into the organization
  *     tags: [Users]
  */
-router.post('/', validate(createUserSchema), controller.create);
+router.post('/', authorize('ADMIN'), validate(createUserSchema), controller.create);
 
 /**
  * @swagger
@@ -69,7 +70,7 @@ router.get('/:id', controller.getOne);
  *     summary: Update user role or active status
  *     tags: [Users]
  */
-router.patch('/:id', validate(updateUserSchema), controller.update);
+router.patch('/:id', authorize('ADMIN'), validate(updateUserSchema), controller.update);
 
 /**
  * @swagger
@@ -78,6 +79,6 @@ router.patch('/:id', validate(updateUserSchema), controller.update);
  *     summary: Deactivate a user (soft delete)
  *     tags: [Users]
  */
-router.delete('/:id', controller.deactivate);
+router.delete('/:id', authorize('ADMIN'), controller.deactivate);
 
 module.exports = router;

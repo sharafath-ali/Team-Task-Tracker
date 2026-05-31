@@ -16,6 +16,7 @@ const db = require('../config/db');
 exports.seed = async (knex) => {
   // Clean in reverse FK order
   await knex('tasks').del();
+  await knex('project_members').del();
   await knex('projects').del();
   await knex('refresh_tokens').del();
   await knex('users').del();
@@ -45,6 +46,13 @@ exports.seed = async (knex) => {
   const [project] = await knex('projects')
     .insert({ org_id: org.id, created_by: admin.id, name: 'Alpha Launch', description: 'Q3 product launch project' })
     .returning('*');
+
+  // Project Members — assign all demo users to Alpha Launch
+  await knex('project_members').insert([
+    { project_id: project.id, user_id: admin.id,   project_role: 'OWNER' },
+    { project_id: project.id, user_id: manager.id, project_role: 'MEMBER' },
+    { project_id: project.id, user_id: member.id,  project_role: 'MEMBER' },
+  ]);
 
   // Tasks
   await knex('tasks').insert([
