@@ -67,22 +67,18 @@ const errorMiddleware = (err, req, res, _next) => {
 
   // JWT errors (shouldn't reach here but just in case)
   if (err.name === "TokenExpiredError") {
-    return res
-      .status(401)
-      .json({
-        status: 401,
-        code: "TOKEN_EXPIRED",
-        message: "Access token has expired",
-      });
+    return res.status(401).json({
+      status: 401,
+      code: "TOKEN_EXPIRED",
+      message: "Access token has expired",
+    });
   }
   if (err.name === "JsonWebTokenError") {
-    return res
-      .status(401)
-      .json({
-        status: 401,
-        code: "INVALID_TOKEN",
-        message: "Invalid access token",
-      });
+    return res.status(401).json({
+      status: 401,
+      code: "INVALID_TOKEN",
+      message: "Invalid access token",
+    });
   }
 
   // Generic 500
