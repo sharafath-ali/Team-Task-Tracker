@@ -9,8 +9,9 @@ import {
   CheckSquare,
   Clock,
   Layers,
+  Edit,
 } from "lucide-react";
-import { listProjects, createProject } from "../api/projects.api";
+import { listProjects, createProject, updateProject } from "../api/projects.api";
 import useAuthStore from "../store/authStore";
 import useProjectStore from "../store/projectStore";
 import { useToast } from "../context/ToastContext";
@@ -43,6 +44,7 @@ export default function ProjectsPage() {
   const toast = useToast();
 
   const [showCreate, setShowCreate] = useState(false);
+  const [editingProject, setEditingProject] = useState(null);
   const [form, setForm] = useState({ name: "", description: "" });
   const [error, setError] = useState("");
 
@@ -163,11 +165,25 @@ export default function ProjectsPage() {
                   <div className={`project-card-accent ${accent}`} />
                   <div className="project-card-body">
                     {/* Name + description */}
-                    <div>
-                      <div className="project-card-name">{project.name}</div>
-                      <div className="project-card-desc">
-                        {project.description || "No description provided."}
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12 }}>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div className="project-card-name">{project.name}</div>
+                        <div className="project-card-desc">
+                          {project.description || "No description provided."}
+                        </div>
                       </div>
+                      {["ADMIN", "MANAGER"].includes(user?.role) && (
+                        <button
+                          className="btn btn-ghost btn-icon btn-sm project-edit-btn"
+                          title="Edit Project"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setEditingProject(project);
+                          }}
+                        >
+                          <Edit size={14} />
+                        </button>
+                      )}
                     </div>
 
                     {/* Stats */}
@@ -313,6 +329,119 @@ export default function ProjectsPage() {
           </div>
         </div>
       )}
+
+      {/* Edit Project Modal */}
+      {editingProject && (
+        <EditProjectModal
+          project={editingProject}
+          onClose={() => setEditingProject(null)}
+        />
+      )}
     </>
+  );
+}
+
+// ─── Edit Project Modal Component ────────────────────────────────────
+function EditProjectModal({ project, onClose }) {
+  const qc = useQueryClient();
+  const toast = useToast();
+  const [form, setForm] = useState({
+    name: project.name,
+    description: project.description || "",
+  });
+  const [error, setError] = useState("");
+
+  const updateMut = useMutation({
+    mutationFn: (data) => updateProject(project.id, data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["projects"] });
+      toast.success(`Project "${form.name}" updated successfully!`);
+      onClose();
+    },
+    onError: (err) => {
+      const errMsg = err.response?.data?.message || "Failed to update project";
+      setError(errMsg);
+      toast.error(errMsg);
+    },
+  });
+
+  return (
+    <div
+      className="modal-overlay"
+      onClick={(e) => e.target === e.currentTarget && onClose()}
+    >
+      <div className="modal" style={{ maxWidth: 460 }}>
+        <div className="modal-header">
+          <h2 className="modal-title">Edit Project</h2>
+          <button
+            className="btn btn-ghost btn-icon"
+            onClick={onClose}
+            aria-label="Close"
+          >
+            <X size={16} />
+          </button>
+        </div>
+
+        {error && <div className="alert alert-error">{error}</div>}
+
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            setError("");
+            updateMut.mutate(form);
+          }}
+        >
+          <div className="form-group">
+            <label className="form-label" htmlFor="edit-project-name">
+              Project name *
+            </label>
+            <input
+              id="edit-project-name"
+              className="form-input"
+              placeholder="e.g. Q4 Product Launch"
+              value={form.name}
+              onChange={(e) =>
+                setForm((f) => ({ ...f, name: e.target.value }))
+              }
+              required
+              autoFocus
+            />
+          </div>
+          <div className="form-group">
+            <label className="form-label" htmlFor="edit-project-desc">
+              Description
+            </label>
+            <textarea
+              id="edit-project-desc"
+              className="form-textarea"
+              placeholder="What is this project about? (optional)"
+              value={form.description}
+              onChange={(e) =>
+                setForm((f) => ({ ...f, description: e.target.value }))
+              }
+              rows={3}
+            />
+          </div>
+
+          <div className="modal-footer">
+            <button
+              type="button"
+              className="btn btn-secondary"
+              onClick={onClose}
+            >
+              Cancel
+            </button>
+            <button
+              id="edit-project-submit"
+              type="submit"
+              className="btn btn-primary"
+              disabled={updateMut.isPending}
+            >
+              {updateMut.isPending ? "Saving…" : "Save Changes"}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
   );
 }
